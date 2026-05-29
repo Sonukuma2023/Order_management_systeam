@@ -26,7 +26,7 @@ class ChatbotController extends Controller
        
         $totalOrderCount = count($total_order);
         $orderList = collect($total_order)->map(function($order) {
-            return "- Order ID: {$order['order']}, Title: {$order['title']}, Customer/Product Name: {$order['name']}, Price: ₹{$order['price']}";
+            return "- Order ID: {$order['order']}, Title: {$order['title']},Product Name: {$order['name']}, Price: ₹{$order['price']}";
         })->implode("\n");
 
 
@@ -36,7 +36,7 @@ class ChatbotController extends Controller
 
         $adminQuestion = $request->input('question');
 
-        $totalCustomers = User::count();
+        $totalCustomers = User::where('role','vendor')->count();
         $totalCategories = Category::count();
         $activeProducts  = Product::where('status', 'active')->count();
         $totalProducts   = Product::count();
