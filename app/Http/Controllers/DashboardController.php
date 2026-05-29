@@ -47,7 +47,7 @@ class DashboardController extends Controller
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
             ->count();
-        $user_count = User::count();
+        $user_count = User::where('role','vendor')->count();
 
         return Inertia::render('Dashboard', [
             'totalsale' => $totalsale,

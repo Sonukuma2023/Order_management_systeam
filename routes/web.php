@@ -15,9 +15,24 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\ChatbotController;
 use Inertia\Inertia;
 
+// Route::get('/', function () {
+//         return Inertia::render('Welcome');
+//     });
+
 Route::get('/', function () {
-        return Inertia::render('Welcome');
-    });
+
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    $user = Auth::user();
+    if ($user->role === 'administrator') {
+        return redirect()->intended(route('dashboard'));
+    }
+    if ($user->role === 'vendor') {
+        return redirect()->intended(route('vendor.dashboard'));
+    }
+    return redirect()->intended('/');
+});
 
 Route::get('login', [LoginController::class, 'create'])->name('login');
 Route::post('login', [LoginController::class, 'store']);

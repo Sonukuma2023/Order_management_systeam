@@ -26,7 +26,7 @@ class ChatbotController extends Controller
        
         $totalOrderCount = count($total_order);
         $orderList = collect($total_order)->map(function($order) {
-            return "- Order ID: {$order['order']}, Title: {$order['title']}, Customer/Product Name: {$order['name']}, Price: ₹{$order['price']}";
+            return "- Order ID: {$order['order']}, Title: {$order['title']},Product Name: {$order['name']}, Price: ₹{$order['price']}";
         })->implode("\n");
 
 
@@ -36,7 +36,7 @@ class ChatbotController extends Controller
 
         $adminQuestion = $request->input('question');
 
-        $totalCustomers = User::count();
+        $totalCustomers = User::where('role','vendor')->count();
         $totalCategories = Category::count();
         $activeProducts  = Product::where('status', 'active')->count();
         $totalProducts   = Product::count();
@@ -47,13 +47,15 @@ class ChatbotController extends Controller
                 return "- {$product->name}: Price ₹{$product->price}, Stock/Qty: {$product->quantity}, Status: {$product->status}";
             })->implode("\n");
 
-        $customerList = User::select('name', 'email','phone')
+        $customerList = User::select('name', 'email', 'phone', 'role')
+            ->where('role', 'vendor')
             ->latest()
             ->take(50)
             ->get()
             ->map(function($user) {
-                return "- Name: {$user->name}, Email: {$user->email},phone: {$user->phone}";
-            })->implode("\n");
+                return "- Name: {$user->name}, Email: {$user->email}, Phone: {$user->phone}";
+            })
+            ->implode("\n");
         $categoryList = Category::select('name')
             ->get()
             ->map(function($cat) {
@@ -105,7 +107,7 @@ class ChatbotController extends Controller
             #D2         Apc        Apc        ₹125.00
 
             - Keep responses clear, professional, concise, and straight to the point. Do not mention that a system prompt or context list was provided to you.
-
+            - OFF-TOPIC REFUSAL RULE: If the admin asks any question that is NOT related to this store's data (such as asking about famous personalities like MS Dhoni, general knowledge, sports, or news), you must NOT answer it. Instead, reply strictly with this exact phrase: I am an AI assistant. I have knowledge of this store. Ask me any question regarding categories, sales totals, or configurations.
         ";
         $apiKey = env('GEMINI_API_KEY');
         $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
