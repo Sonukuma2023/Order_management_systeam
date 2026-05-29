@@ -18,7 +18,7 @@
           <i class='bx bx-filter-alt'></i> Filter
         </button>
       </div>
-    </div>
+    </div> 
 
     <div class="stats-grid">
       <div class="stat-card">
