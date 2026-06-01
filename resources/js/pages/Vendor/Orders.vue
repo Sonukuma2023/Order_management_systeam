@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import VendorLayout from '../VendorLayout.vue';
+import html2pdf from 'html2pdf.js';
 
 // Define incoming dynamic properties from Laravel controller
 defineProps({
@@ -15,6 +16,9 @@ defineProps({
 const isModalOpen = ref(false);
 const selectedOrder = ref(null);
 
+// This variable maps directly to the DOM node targeted with ref="modalContent"
+const modalContent = ref(null);
+
 // Open the modal and set the selected row data
 const viewOrderDetails = (order) => {
     selectedOrder.value = order;
@@ -25,6 +29,67 @@ const viewOrderDetails = (order) => {
 const closeModal = () => {
     isModalOpen.value = false;
     selectedOrder.value = null;
+};
+
+const downloadOrderPDF = async () => {
+    await nextTick();
+
+    const element = modalContent.value;
+    
+    if (!element) {
+        console.error("PDF target element not found.");
+        return;
+    }
+
+    // 1. Clean filename formatting string to ensure it ends exactly with .pdf
+    // Replacing spaces/special characters prevents browsers from guessing incorrect MIME types
+    const rawFilename = `Invoice_${selectedOrder.value?.order_id || 'Details'}`;
+    const cleanFilename = rawFilename.replace(/[^a-z0-9_-]/gi, '_').toLowerCase() + '.pdf';
+
+    const options = {
+        margin:       [12, 12, 12, 12],
+        filename:     cleanFilename, 
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: '#15151a',
+            ignoreElements: (el) => el.classList.contains('exclude-from-pdf')
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true }
+    };
+
+    try {
+        // Execute generation worker sequence
+        html2pdf().set(options).from(element).save();
+    } catch (error) {
+        console.error("PDF generation failed, forcing blob fallback:", error);
+        fallbackBlobDownload(element, cleanFilename);
+    }
+};
+
+// 2. High-reliability fallback method if browser intercept remains an issue
+const fallbackBlobDownload = (element, filename) => {
+    const opt = {
+        margin: 12,
+        filename: filename,
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).outputPdf('blob').then((blob) => {
+        const fileURL = URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
+        
+        downloadLink.href = fileURL;
+        downloadLink.download = filename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        
+        // Clean up memory space
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(fileURL);
+    });
 };
 </script>
 
@@ -109,73 +174,80 @@ const closeModal = () => {
 
         <!-- Pop-up Details Modal Overlay Layout -->
         <div v-if="isModalOpen && selectedOrder" class="modal-backdrop">
-            <div class="modal-surface animate-fade-in"> 
-                <div class="modal-header">
-                    <div class="modal-title-group">
-                        <i class='bx bx-receipt modal-header-icon'></i>
-                        <div>
-                            <h2>Order Details</h2>
-                            <p class="modal-id-stamp">{{ selectedOrder.order_name || ('#' + selectedOrder.order_id) }}</p>
-                        </div>
+        <div class="modal-surface animate-fade-in"> 
+            
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <i class='bx bx-receipt modal-header-icon'></i>
+                    <div>
+                        <h2>Order Details</h2>
+                        <p class="modal-id-stamp">{{ selectedOrder.order_name || ('#' + selectedOrder.order_id) }}</p>
                     </div>
-                    <button class="modal-close-btn" @click="closeModal">×</button>
+                </div>
+                <button class="modal-close-btn" @click="closeModal">×</button>
+            </div>
+
+            <div class="modal-body-scrollable" ref="modalContent">
+                
+                <div class="detail-section">
+                    <div class="info-status-banner">
+                        <span class="label-dim">Current Status:</span>
+                        <span :class="['status-pill', 'status-' + (selectedOrder.status || 'pending').toLowerCase()]">
+                            {{ selectedOrder.status }}
+                        </span>
+                    </div>
                 </div>
 
-                <div class="modal-body-scrollable">
-                    <!-- Section: Order Lifecycle Tracking Status -->
-                    <div class="detail-section">
-                        <div class="info-status-banner">
-                            <span class="label-dim">Current Status:</span>
-                            <span :class="['status-pill', 'status-' + (selectedOrder.status || 'pending').toLowerCase()]">
-                                {{ selectedOrder.status }}
+                <div class="detail-section">
+                    <h3><i class='bx bx-user'></i> Customer Profile</h3>
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <span class="meta-label">Full Name</span>
+                            <span class="meta-value text-bright">{{ selectedOrder.customer_name }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Email Address</span>
+                            <span class="meta-value text-link">{{ selectedOrder.email || 'N/A' }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Purchase Date</span>
+                            <span class="meta-value">{{ selectedOrder.date }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section highlight-bg">
+                    <h3><i class='bx bx-shopping-bag'></i> Line Item Breakdown</h3>
+                    <div class="meta-grid">
+                        <div class="meta-item spans-all">
+                            <span class="meta-label">Product Title / Variant Name</span>
+                            <span class="meta-value text-bright text-large">{{ selectedOrder.product_name }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Database Identifier</span>
+                            <span class="meta-value code-style">PID-{{ selectedOrder.product_id }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Unit Settlement Price</span>
+                            <span class="meta-value text-accent font-semibold">
+                                ₹{{ typeof selectedOrder.price === 'number' ? selectedOrder.price.toFixed(2) : parseFloat(selectedOrder.price || 0).toFixed(2) }}
                             </span>
                         </div>
-                    </div>
-
-                    <!-- Section: Customer Credentials -->
-                    <div class="detail-section">
-                        <h3><i class='bx bx-user'></i> Customer Profile</h3>
-                        <div class="meta-grid">
-                            <div class="meta-item">
-                                <span class="meta-label">Full Name</span>
-                                <span class="meta-value text-bright">{{ selectedOrder.customer_name }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Email Address</span>
-                                <span class="meta-value text-link">{{ selectedOrder.email || 'N/A' }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Purchase Date</span>
-                                <span class="meta-value">{{ selectedOrder.date }}</span>
-                            </div>
+                        
+                        <div class="meta-item spans-all download-container exclude-from-pdf">
+                            <button class="download-pdf-btn" @click="downloadOrderPDF">
+                                <i class='bx bx-download'></i> Download PDF
+                            </button> 
                         </div>
                     </div>
-
-                    <!-- Section: Product Metrics & Breakdown -->
-                    <div class="detail-section highlight-bg">
-                        <h3><i class='bx bx-shopping-bag'></i> Line Item Breakdown</h3>
-                        <div class="meta-grid">
-                            <div class="meta-item spans-all">
-                                <span class="meta-label">Product Title / Variant Name</span>
-                                <span class="meta-value text-bright text-large">{{ selectedOrder.product_name }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Database Identifier</span>
-                                <span class="meta-value code-style">PID-{{ selectedOrder.product_id }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Unit Settlement Price</span>
-                                <span class="meta-value text-accent font-semibold">₹{{ typeof selectedOrder.price === 'number' ? selectedOrder.price.toFixed(2) : parseFloat(selectedOrder.price || 0).toFixed(2) }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="footer-dismiss-btn" @click="closeModal">Close</button>
                 </div>
             </div>
+
+            <div class="modal-footer">
+                <button class="footer-dismiss-btn" @click="closeModal">Close</button>
+            </div>
         </div>
+    </div>
     </VendorLayout>
 </template>
 
@@ -228,7 +300,6 @@ const closeModal = () => {
     overflow: hidden;
 }
 
-/* Dynamic Width Grid System Alignment */
 .table-header-row, .table-data-row {
     display: grid;
     grid-template-columns: 1.2fr 1.8fr 1.8fr 1.2fr 1.2fr 1.5fr 1fr;
@@ -236,7 +307,6 @@ const closeModal = () => {
     padding: 16px 24px;
 }
 
-/* Header Text Rules */
 .table-header-row {
     background: #1e1e24;
     border-bottom: 1px solid #2a2a30;
@@ -530,7 +600,7 @@ const closeModal = () => {
 }
 
 .text-bright {
-    color: #fff;
+    color: #00e5ff;
     font-weight: 500;
 }
 
@@ -552,12 +622,12 @@ const closeModal = () => {
 
 .code-style {
     font-family: monospace;
-    background: #1e1e24;
+    background: #c0c0c5;
     padding: 2px 6px;
     border-radius: 4px;
     width: fit-content;
     border: 1px solid #2d2d34;
-    color: #e4e4e7;
+    color: #2d2d34;
 }
 
 .modal-footer {
@@ -583,5 +653,35 @@ const closeModal = () => {
 .footer-dismiss-btn:hover {
     background: #3f3f46;
     color: #fff;
+}
+
+
+.download-pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 12px;
+  background-color: #00bcd4; /* Accent color matching your email link/price text */
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.download-pdf-btn:hover {
+  background-color: #0097a7;
+  transform: translateY(-1px);
+}
+
+.download-pdf-btn:active {
+  transform: translateY(0);
+}
+
+.download-pdf-btn i {
+  font-size: 1.1rem;
 }
 </style>

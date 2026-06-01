@@ -41,41 +41,41 @@ class VendorController extends Controller
         $result = [];
 
        if (!empty($orderdata['draft_orders'])) {
-    foreach ($orderdata['draft_orders'] as $order) {
-        $hasMatch = false;
+            foreach ($orderdata['draft_orders'] as $order) {
+                $hasMatch = false;
 
-        if (!empty($order['line_items'])) {
-            foreach ($order['line_items'] as $item) {
-                $productId = $item['product_id'] ?? null;
+                if (!empty($order['line_items'])) {
+                    foreach ($order['line_items'] as $item) {
+                        $productId = $item['product_id'] ?? null;
 
-                // Check if product belongs to logged user
-                if (in_array($productId, $userProductIds)) {
-                    $hasMatch = true;
+                        // Check if product belongs to logged user
+                        if (in_array($productId, $userProductIds)) {
+                            $hasMatch = true;
 
-                    // FIX: Get the individual item price, fallback to calculated price if missing
-                    $itemPrice = isset($item['price']) ? (float)$item['price'] : 0;
-                    $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
+                            // FIX: Get the individual item price, fallback to calculated price if missing
+                            $itemPrice = isset($item['price']) ? (float)$item['price'] : 0;
+                            $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
 
-                    // Calculate actual sales for this specific vendor item
-                    $itemTotalSales = $itemPrice * $quantity;
-                    $total_sales += $itemTotalSales;
+                            // Calculate actual sales for this specific vendor item
+                            $itemTotalSales = $itemPrice * $quantity;
+                            $total_sales += $itemTotalSales;
 
-                    $result[] = [
-                        'order' => $order['name'] ?? null,
-                        'title' => $item['title'] ?? null,
-                        'name'  => $item['name'] ?? null,
-                        'price' => $itemTotalSales, // Send the item total to the chart array
-                    ];
+                            $result[] = [
+                                'order' => $order['name'] ?? null,
+                                'title' => $item['title'] ?? null,
+                                'name'  => $item['name'] ?? null,
+                                'price' => $itemTotalSales, // Send the item total to the chart array
+                            ];
+                        }
+                    }
+                }
+
+                // Count unique orders for this vendor
+                if ($hasMatch) {
+                    $order_count++;
                 }
             }
         }
-
-        // Count unique orders for this vendor
-        if ($hasMatch) {
-            $order_count++;
-        }
-    }
-}
 
         return Inertia::render('VendorDashboard', [
             'product_count' => $product_count,
@@ -507,6 +507,78 @@ class VendorController extends Controller
 
             return false;
         }
+    }
+
+    public function reports_products(){
+
+        $orderdata =  $this->get_orders($start = null, $end = null);
+        
+        $userProductIds = Product::where('auth_id', Auth::id())
+            ->pluck('shopify_id')
+            ->toArray();
+
+        $order_count = 0;
+        $total_sales = 0;
+        $result = [];
+        
+        if (!empty($orderdata['draft_orders'])) {
+
+        foreach ($orderdata['draft_orders'] as $order) {
+
+            $hasMatch = false;
+
+            foreach (($order['line_items'] ?? []) as $item) {
+
+                $productId = $item['product_id'] ?? null;
+
+                if (in_array($productId, $userProductIds)) {
+
+
+                    $product = $this->findproduct($productId);
+                    $hasMatch = true;
+
+                    $price = (float) ($item['price'] ?? 0);
+                    $quantity = (int) ($item['quantity'] ?? 1);
+
+                    $itemTotalSales = $price * $quantity;
+
+                    $total_sales += $itemTotalSales;
+
+                    $result[] = [
+                        'order_id'          => $order['id'] ?? '',
+                        'product_id'     => $productId,
+                        'quantity'       => $quantity,
+                        'order_price'    => $price,
+                        'total'          => $itemTotalSales,
+                        'name'          => $product->name ?? '',
+                        'image'          => $product->image ?? '',
+                        'status'         => $product->status ?? '',
+                        'product_price'  => $product->price ?? 0,
+                    ];
+                }
+            }
+
+            if ($hasMatch) {
+                $order_count++;
+            }
+        }
+        
+    }
+        return Inertia::render('Vendor/product_report',compact('result'));
+    }
+
+
+    public function findproduct($productId)
+    {
+        return Product::select(
+            'id',
+            'name',
+            'image',
+            'status',
+            'quantity',
+            'price',
+            'shopify_id'
+        )->firstWhere('shopify_id', $productId);
     }
 
 

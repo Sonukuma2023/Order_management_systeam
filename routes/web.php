@@ -78,6 +78,9 @@ Route::prefix('vendor')
         Route::delete('/products/{id}', [VendorController::class, 'destroy'])
             ->name('products.destroy');
         Route::put('/profile/update', [VendorController::class, 'update_profile'])->name('profile.update');
+
+        Route::get('/reports/products', [VendorController::class, 'reports_products'])
+            ->name('reports.products');
 });
 
 
@@ -104,6 +107,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::put('/users/{id}', [DashboardController::class, 'update_user'])->name('users.update');
     Route::post('users', [CustomerController::class, 'addnewuser'])->name('users');
     Route::post('/admin/chatbot/query', [ChatbotController::class, 'handleQuery']);
+
 });
 
 // Route::post('/webhook/product',[ProductController::class,'webhook_create_products'])->name('webhook.product');
