@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -509,62 +510,68 @@ class VendorController extends Controller
         }
     }
 
-    public function reports_products(){
-
-        $orderdata =  $this->get_orders($start = null, $end = null);
+    public function reports_products()
+    {
+        $orderdata = $this->get_orders($start = null, $end = null);
         
         $userProductIds = Product::where('auth_id', Auth::id())
             ->pluck('shopify_id')
             ->toArray();
 
-        $order_count = 0;
-        $total_sales = 0;
         $result = [];
         
-        if (!empty($orderdata['draft_orders'])) {
-
-        foreach ($orderdata['draft_orders'] as $order) {
-
-            $hasMatch = false;
-
+        foreach (($orderdata['draft_orders'] ?? []) as $order) {
             foreach (($order['line_items'] ?? []) as $item) {
-
                 $productId = $item['product_id'] ?? null;
 
-                if (in_array($productId, $userProductIds)) {
+                if (!in_array($productId, $userProductIds)) {
+                    continue;
+                }
 
+                $product = $this->findproduct($productId);
+                if (!$product) continue; // Safety check
 
-                    $product = $this->findproduct($productId);
-                    $hasMatch = true;
+                $quantity = (int) ($item['quantity'] ?? 1);
+                $price    = (float) ($item['price'] ?? 0);
+                $revenue  = $price * $quantity;
 
-                    $price = (float) ($item['price'] ?? 0);
-                    $quantity = (int) ($item['quantity'] ?? 1);
-
-                    $itemTotalSales = $price * $quantity;
-
-                    $total_sales += $itemTotalSales;
-
-                    $result[] = [
-                        'order_id'          => $order['id'] ?? '',
-                        'product_id'     => $productId,
-                        'quantity'       => $quantity,
-                        'order_price'    => $price,
-                        'total'          => $itemTotalSales,
-                        'name'          => $product->name ?? '',
-                        'image'          => $product->image ?? '',
-                        'status'         => $product->status ?? '',
-                        'product_price'  => $product->price ?? 0,
+                if (!isset($result[$product->id])) {
+                    $result[$product->id] = [
+                        'product_id'    => $product->id,
+                        'name'          => $product->name,
+                        'image'         => $product->image,
+                        'status'        => $product->status,
+                        'product_price' => $product->price,
+                        'quantity'      => 0,
+                        'total'         => 0,
                     ];
                 }
-            }
 
-            if ($hasMatch) {
-                $order_count++;
+                $result[$product->id]['quantity'] += $quantity;
+                $result[$product->id]['total'] += $revenue;
             }
         }
         
-    }
-        return Inertia::render('Vendor/product_report',compact('result'));
+        // Convert array values to a flat list
+        $allItems = array_values($result);
+
+        // Set up Manual Pagination parameters
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10; // Number of items per page
+        $currentItems = array_slice($allItems, ($currentPage - 1) * $perPage, $perPage);
+        
+        // Create the Paginator
+        $paginatedResult = new LengthAwarePaginator(
+            $currentItems, 
+            count($allItems), 
+            $perPage, 
+            $currentPage, 
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        );
+        
+        return Inertia::render('Vendor/product_report', [
+            'reportData' => $paginatedResult
+        ]);
     }
 
 
@@ -580,7 +587,4 @@ class VendorController extends Controller
             'shopify_id'
         )->firstWhere('shopify_id', $productId);
     }
-
-
-
 }

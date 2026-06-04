@@ -1,14 +1,19 @@
 <script setup>
+import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import VendorLayout from '../VendorLayout.vue';
 
-defineProps({
-    result: {
-        type: Array,
-        default: () => []
+const props = defineProps({
+    reportData: {
+        type: Object,
+        default: () => ({ data: [], links: [] })
     }
 });
 
-// Helper function to dynamically add color theme classes to status indicators
+// Alias for cleaner template parsing
+const result = computed(() => props.reportData.data || []);
+const paginationLinks = computed(() => props.reportData.links || []);
+
 const getStatusClass = (status) => {
     if (!status) return 'status-default';
     const lower = status.toLowerCase();
@@ -34,7 +39,7 @@ const getStatusClass = (status) => {
                 </div>
 
                 <span class="report-badge">
-                    {{ result.length }} Products
+                    {{ reportData.total || 0 }} Products Total
                 </span>
             </div>
 
@@ -52,7 +57,7 @@ const getStatusClass = (status) => {
                 <div
                     v-if="result.length"
                     v-for="item in result"
-                    :key="item.order_id + '-' + item.product_id"
+                    :key="item.product_id"
                     class="report-row"
                 >
                     <div class="product-info">
@@ -93,6 +98,25 @@ const getStatusClass = (status) => {
                     <i class="bx bx-layer-minus empty-icon"></i>
                     <p>No product report data found.</p>
                 </div>
+            </div>
+
+            <div v-if="result.length && paginationLinks.length > 3" class="pagination-container">
+                <nav class="pagination-nav">
+                    <template v-for="(link, index) in paginationLinks" :key="index">
+                        <div 
+                            v-if="link.url === null" 
+                            class="pagination-link disabled"
+                            v-html="link.label"
+                        ></div>
+                        <Link 
+                            v-else 
+                            :href="link.url" 
+                            class="pagination-link" 
+                            :class="{ 'active': link.active }"
+                            v-html="link.label"
+                        />
+                    </template>
+                </nav>
             </div>
         </div>
     </VendorLayout>
@@ -297,5 +321,52 @@ const getStatusClass = (status) => {
 .empty-state p {
     margin: 0;
     font-size: 0.95rem;
+}
+/* Pagination Styling */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #222226;
+}
+
+.pagination-nav {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.pagination-link {
+    background-color: #222227;
+    border: 1px solid #2d2d2d;
+    color: #e0e0e6;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.pagination-link:hover:not(.disabled) {
+    background-color: #2d2d35;
+    border-color: #ff2770;
+    color: #ff2770;
+}
+
+.pagination-link.active {
+    background-color: #ff2770;
+    border-color: #ff2770;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.pagination-link.disabled {
+    color: #44444f;
+    background-color: #16161a;
+    border-color: #222226;
+    cursor: not-allowed;
 }
 </style>
