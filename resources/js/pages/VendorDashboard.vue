@@ -27,10 +27,10 @@ const props = defineProps({
 
 // --- Fallback Static Data Constants ---
 const STATIC_BAR_LABELS = ['Jan Orders', 'Feb Orders', 'Mar Orders', 'Apr Orders', 'May Orders'];
-const STATIC_BAR_VALUES = [45000, 32000, 61000, 29000, 50000];
+const STATIC_BAR_VALUES = [0, 0, 0, 0, 0];
 
 const STATIC_PIE_LABELS = ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'];
-const STATIC_PIE_VALUES = [40, 25, 15, 12, 8];
+const STATIC_PIE_VALUES = [0, 0, 0, 0, 0];
 
 
 // 1. Data configuration for the Bar Chart (Dynamic vs Static Fallback)

@@ -15,11 +15,7 @@ class CategoryController extends Controller
         $category_data = Category::all();
         return Inertia::render('CategoryComponent',compact('category_data'));
     }   
-    public function create()
-    {
-        
-    }
-
+    
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -31,18 +27,6 @@ class CategoryController extends Controller
         return redirect()->back()->with('success', 'Category created successfully!');
     }
 
-    public function show(Category $category)
-    {
-        //
-    }
-
-    
-    public function edit(Category $category)
-    {
-        //
-    }
-
-    
    public function update(Request $request, Category $category)
     {
         $validated = $request->validate([

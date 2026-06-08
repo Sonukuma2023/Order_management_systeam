@@ -143,10 +143,10 @@ const props = defineProps({
 
 // --- Fallback Static Data Constants ---
 const STATIC_BAR_LABELS = ['Jan Orders', 'Feb Orders', 'Mar Orders', 'Apr Orders', 'May Orders'];
-const STATIC_BAR_VALUES = [75000, 52000, 94000, 48000, 81000];
+const STATIC_BAR_VALUES = [ 0, 0, 0, 0, 0];
 
 const STATIC_PIE_LABELS = ['Product Alpha', 'Product Beta', 'Product Gamma', 'Product Delta', 'Product Epsilon'];
-const STATIC_PIE_VALUES = [35, 25, 20, 12, 8];
+const STATIC_PIE_VALUES = [0, 0, 0, 0, 0];
 
 // --- 1. Date Filter Logic ---
 const filters = reactive({
@@ -158,7 +158,7 @@ const applyFilter = () => {
   router.get('/dashboard', { 
     start_date: filters.start_date, 
     end_date: filters.end_date 
-  }, {
+  },{
     preserveState: true,
     replace: true
   });

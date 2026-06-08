@@ -78,11 +78,11 @@ class ProductController extends Controller
         } else {
            $validated['image'] = $product->image;
         }
-        
-
+    
         if (!empty($product->shopify_id)) {
 
             $this->shopify_products_update($product->shopify_id, $validated);
+           
         }
 
        $data =  $product->update($validated);

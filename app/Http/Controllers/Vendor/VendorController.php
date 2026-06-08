@@ -136,6 +136,7 @@ class VendorController extends Controller
         }
          
         $shopifyResponse = $this->shopify_products_create($validated);
+        
 
         if (isset($shopifyResponse['product']['id'])) {
             $validated['shopify_id'] = $shopifyResponse['product']['id'];
@@ -222,8 +223,6 @@ class VendorController extends Controller
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
         }
-
-       
         $user->save();
 
         return back();
@@ -529,7 +528,7 @@ class VendorController extends Controller
                 }
 
                 $product = $this->findproduct($productId);
-                if (!$product) continue; // Safety check
+                if (!$product) continue;
 
                 $quantity = (int) ($item['quantity'] ?? 1);
                 $price    = (float) ($item['price'] ?? 0);
@@ -552,15 +551,11 @@ class VendorController extends Controller
             }
         }
         
-        // Convert array values to a flat list
         $allItems = array_values($result);
-
-        // Set up Manual Pagination parameters
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = 10; // Number of items per page
+        $perPage = 10; 
         $currentItems = array_slice($allItems, ($currentPage - 1) * $perPage, $perPage);
         
-        // Create the Paginator
         $paginatedResult = new LengthAwarePaginator(
             $currentItems, 
             count($allItems), 
