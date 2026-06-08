@@ -116,12 +116,14 @@ Route::post('/webhook/delete', [ProductController::class, 'webhook_delete_produc
 Route::get('/getorders',[OrderController::class,'index'])->name('getorders');  
 
 Route::post('/logout', function () {
+
     Auth::logout();
     session()->invalidate();
     session()->regenerateToken();
 
     return redirect('/login');
 })->name('logout');
+
 
 
 

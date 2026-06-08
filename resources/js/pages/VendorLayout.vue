@@ -120,6 +120,15 @@ const updateProfile = () => {
         >
             <i class="bx bx-log-out"></i>
         </Link>
+         <!-- <Link
+            :href="route('logout')"
+            method="post"
+            as="button"
+            class="profile-logout"
+        >
+            <i class="bx bx-log-out"></i>
+            Logout
+        </Link> -->
     </div>
 </aside>
 
