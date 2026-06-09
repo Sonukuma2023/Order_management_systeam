@@ -81,6 +81,11 @@ Route::prefix('vendor')
 
         Route::get('/reports/products', [VendorController::class, 'reports_products'])
             ->name('reports.products');
+
+        Route::get('/import_product', [VendorController::class, 'import_product'])->name('import_product');
+
+        Route::post('/products/import', [VendorController::class, 'import'])->name('products.import');
+        Route::post('/products/{id}/sync-shopify', [VendorController::class, 'syncToShopify'])->name('products.sync');
 });
 
 

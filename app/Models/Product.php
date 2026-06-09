@@ -19,5 +19,6 @@ class Product extends Model
         'status',
         'shopify_id',
         'auth_id',
+        'move_to_shopify',
     ];
 }

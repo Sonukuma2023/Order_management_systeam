@@ -70,6 +70,11 @@ const updateProfile = () => {
             <span>Orders</span>
         </Link>
 
+         <Link href="/vendor/import_product" class="nav-item">
+            <i class="bx bxs-cart"></i>
+            <span>Import product</span>
+        </Link>
+
         <!-- Reports Menu -->
         <div class="menu-section">
                     <div 
