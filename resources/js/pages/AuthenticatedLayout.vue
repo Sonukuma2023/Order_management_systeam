@@ -1,107 +1,63 @@
 <template>
-  <div class="dashboard-container">
+  <div class="dashboard-wrapper">
     <aside class="sidebar">
-      <div class="logo-section">
-        <div class="logo-icon">G</div>
-        
-        <h2>Admin<span>panel</span></h2>
+      <div class="sidebar-header">
+        <div class="logo-icon">O</div>
+        <h2>Admin<span>Sync</span></h2>
       </div>
 
-      <nav class="nav-menu">
-        <Link href="/dashboard" :class="{ 'active': $page.url === '/dashboard' }">
+      <nav class="sidebar-nav">
+        <Link href="/dashboard" class="nav-item" :class="{ 'active': $page.url === '/dashboard' }">
           <i class='bx bxs-dashboard'></i> <span>Dashboard</span>
         </Link>
-        <Link href="/products" :class="{ 'active': $page.url.startsWith('/products') }">
+        <Link href="/products" class="nav-item" :class="{ 'active': $page.url.startsWith('/products') }">
           <i class='bx bxs-shopping-bag'></i> <span>Products</span>
         </Link>
-        <Link href="/orders">
+        <Link href="/orders" class="nav-item" :class="{ 'active': $page.url.startsWith('/orders') }">
           <i class='bx bxs-cart'></i> <span>Orders</span>
         </Link>
-        <Link href="/category">
+        <Link href="/category" class="nav-item" :class="{ 'active': $page.url.startsWith('/category') }">
           <i class='bx bxs-category'></i> <span>Category</span>
         </Link>
-        <a href="#" @click.prevent="openImportModal" :class="{ 'active': showImportModal }">
-          <i class='bx bxs-user-plus'></i> <span>Client import</span> 
+        <a href="#" @click.prevent="openImportModal" class="nav-item" :class="{ 'active': showImportModal }">
+          <i class='bx bxs-user-plus'></i> <span>Client Import</span> 
         </a>
-
-        <Link href="/customer">
-          <i className='bx bxs-user'></i> <span>Customer</span>
+        <Link href="/customer" class="nav-item" :class="{ 'active': $page.url.startsWith('/customer') }">
+          <i class='bx bxs-user'></i> <span>Customers</span>
         </Link>
-        
       </nav>
-      <div v-if="showImportModal" class="modal-overlay">
-  <div class="modal-card import-modal">
-    <div class="modal-header">
-      <h3><i class='bx bxs-file-import'></i> Import Customers</h3>
-      <button @click="closeImportModal" class="close-btn">&times;</button>
-    </div>
 
-    <form @submit.prevent="submitImport">
-      <div class="modal-body">
-        <p class="modal-subtitle">Upload a CSV file to add customers to your database.</p>
-        
-        <div class="upload-area" :class="{ 'dragging': isDragging }" 
-             @dragover.prevent="isDragging = true" 
-             @dragleave.prevent="isDragging = false"
-             @drop.prevent="handleDrop">
-          
-          <i class='bx bxs-cloud-upload'></i>
-          <p v-if="!importForm.file">Click or drag & drop CSV file</p>
-          <p v-else class="file-name">{{ importForm.file.name }}</p>
-          
-          <input type="file" @change="handleFileSelect" accept=".csv" ref="fileInput" hidden>
-          <button type="button" @click="$refs.fileInput.click()" class="select-btn">Browse Files</button>
+      <div class="user-profile" @click="openProfileModal">
+        <div class="user-avatar">
+          <i class='bx bxs-user-circle'></i>
         </div>
-        <span v-if="importForm.errors.file" class="error-text">{{ importForm.errors.file }}</span>
+
+        <div class="user-info">
+          <p class="user-name">{{ $page.props.auth.user.name }}</p>
+          <p class="user-role">Administrator</p>
+        </div>
+
+        <Link 
+          href="/logout" 
+          method="post" 
+          as="button" 
+          type="button"
+          class="profile-logout" 
+          @click.stop
+        >
+          <i class='bx bx-log-out'></i>
+        </Link> 
       </div>
-
-      <div class="modal-footer">
-        <button type="button" @click="closeImportModal" class="cancel-btn">Cancel</button>
-        <button type="submit" class="save-btn" :disabled="importForm.processing">
-          {{ importForm.processing ? 'Importing...' : 'Start Import' }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-      
-
-<div class="user-profile" @click="openProfileModal" style="cursor: pointer;">
-  <div class="user-avatar">
-    <i class='bx bxs-user-circle'></i>
-  </div>
-
-  <div class="user-info">
-    <p class="user-name">{{ $page.props.auth.user.name }}</p>
-    <p class="user-role">Administrator</p>
-  </div>
-
-  <Link 
-    href="/logout" 
-    method="post" 
-    as="button" 
-    type="button"
-    class="logout-btn" 
-    @click.stop
-  >
-    <i class='bx bx-log-out'></i>
-  </Link> 
-</div>
-
-
-      
     </aside>
 
     <main class="main-content">
       <header class="top-nav">
         <div class="search-bar">
           <i class='bx bx-search'></i>
-          <input type="text" placeholder="Search data...">
+          <input type="text" placeholder="Search across store...">
         </div>
-        <div class="top-actions">
-          <i class='bx bxs-bell'></i>
-          <div class="avatar"></div>
+        <div class="top-user-name">
+          <i class='bx bxs-badge-check'></i> {{ $page.props.auth.user.name }}
         </div>
       </header>
 
@@ -109,55 +65,87 @@
         <slot />
       </div>
     </main>
-    <div v-if="showProfileModal" class="modal-overlay">
-      <div class="modal-card profile-modal">
+
+    <!-- Client Import Modal -->
+    <div v-if="showImportModal" class="modal-overlay">
+      <div class="modal-card import-modal">
         <div class="modal-header">
-          <h3>Edit Profile</h3>
-          <button @click="closeProfileModal" class="close-btn">&times;</button>
+          <h3><i class='bx bx-import'></i> Import Customers</h3>
+          <button @click="closeImportModal" class="close-x">&times;</button>
         </div>
 
-        <form @submit.prevent="updateProfile">
-          <div class="modal-body">
-            <div class="form-group">
-              <label>Full Name</label>
-              <input v-model="profileForm.name" type="text" placeholder="Your Name">
-              <span v-if="profileForm.errors.name" class="error-text">{{ profileForm.errors.name }}</span>
-            </div>
-
-            <div class="form-group">
-              <label>Email Address</label>
-              <input v-model="profileForm.email" type="email" placeholder="email@example.com">
-              <span v-if="profileForm.errors.email" class="error-text">{{ profileForm.errors.email }}</span>
-            </div>
-
-            <hr class="modal-divider">
+        <form @submit.prevent="submitImport" class="modal-form">
+          <div class="modal-body text-center">
+            <p class="modal-subtitle">Upload a CSV file to seamlessly import customers into your database.</p>
             
-            <div class="password-section">
-              <p class="section-title">Change Password</p>
-                    
-              <div class="input-group mt-10">
-                <input type="password" v-model="profileForm.password" placeholder="New Password" />
-                <span v-if="profileForm.errors.password" class="error-text">{{ profileForm.errors.password }}</span>
-              </div>
-
-              <div class="input-group">
-                <input type="password" v-model="profileForm.password_confirmation" placeholder="Confirm New Password" />
-              </div>
+            <div class="upload-area" :class="{ 'dragging': isDragging }" 
+                 @dragover.prevent="isDragging = true" 
+                 @dragleave.prevent="isDragging = false"
+                 @drop.prevent="handleDrop">
+              
+              <div class="upload-icon-circle"><i class='bx bx-cloud-upload'></i></div>
+              <p v-if="!importForm.file">Drag & drop your CSV file here, or click to browse</p>
+              <p v-else class="file-name">{{ importForm.file.name }}</p>
+              
+              <input type="file" @change="handleFileSelect" accept=".csv" ref="fileInput" hidden>
+              <button type="button" @click="$refs.fileInput.click()" class="btn-secondary mt-10">Select File</button>
             </div>
-
+            <span v-if="importForm.errors.file" class="err-msg mt-10">{{ importForm.errors.file }}</span>
           </div>
 
-          <div class="modal-footer">
-            <button type="button" @click="closeProfileModal" class="cancel-btn">Cancel</button>
-            <button type="submit" class="save-btn" :disabled="profileForm.processing">
-              {{ profileForm.processing ? 'Updating...' : 'Update Profile' }}
+          <div class="modal-actions">
+            <button type="button" @click="closeImportModal" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary" :disabled="importForm.processing || !importForm.file">
+              {{ importForm.processing ? 'Importing...' : 'Start Import' }}
             </button>
           </div>
         </form>
       </div>
     </div>
 
+    <!-- Edit Profile Modal -->
+    <div v-if="showProfileModal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Edit Profile</h3>
+          <button @click="closeProfileModal" class="close-x">&times;</button>
+        </div>
 
+        <form @submit.prevent="updateProfile" class="modal-form">
+          <div class="input-group">
+            <label>Full Name</label>
+            <input v-model="profileForm.name" type="text" placeholder="Your Name">
+            <span v-if="profileForm.errors.name" class="err-msg">{{ profileForm.errors.name }}</span>
+          </div>
+
+          <div class="input-group">
+            <label>Email Address</label>
+            <input v-model="profileForm.email" type="email" placeholder="email@company.com">
+            <span v-if="profileForm.errors.email" class="err-msg">{{ profileForm.errors.email }}</span>
+          </div>
+          
+          <div class="password-section">
+            <p class="section-title">Security</p>
+                  
+            <div class="input-group mt-10">
+              <input type="password" v-model="profileForm.password" placeholder="New Password" />
+              <span v-if="profileForm.errors.password" class="err-msg">{{ profileForm.errors.password }}</span>
+            </div>
+
+            <div class="input-group">
+              <input type="password" v-model="profileForm.password_confirmation" placeholder="Confirm New Password" />
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" @click="closeProfileModal" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary" :disabled="profileForm.processing">
+              {{ profileForm.processing ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -173,6 +161,7 @@ const profileForm = useForm({
   name: page.props.auth.user.name,
   email: page.props.auth.user.email,
   password: '',
+  password_confirmation: '',
 });
 
 const openProfileModal = () => {
@@ -182,7 +171,7 @@ const openProfileModal = () => {
 
 const closeProfileModal = () => {
   showProfileModal.value = false;
-  profileForm.reset('password');
+  profileForm.reset('password', 'password_confirmation');
 };
 
 const updateProfile = () => {
@@ -197,7 +186,7 @@ const updateProfile = () => {
         title: 'Profile updated!',
         showConfirmButton: false,
         timer: 3000,
-        background: '#1a1a1e',
+        background: '#18181b',
         color: '#fff'
       });
     },
@@ -246,362 +235,466 @@ const submitImport = () => {
         title: 'Import Complete!',
         showConfirmButton: false,
         timer: 3000,
-        background: '#1a1a1e',
+        background: '#18181b',
         color: '#fff'
       });
     },
   });
 };
-
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: flex; justify-content: center; align-items: center;
-  z-index: 9999;
-}
-.profile-modal {
-  width: 400px;
-  background: #25252b;
-  border: 1px solid #ff2770;
-  border-radius: 15px;
-  box-shadow: 0 0 20px rgba(255, 39, 112, 0.2);
-}
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #333;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.modal-header h3 { color: #ff2770; margin: 0; font-size: 18px; }
-
-.modal-body { padding: 20px; }
-
-.modal-divider { border: 0; border-top: 1px solid #333; margin: 20px 0; }
-.section-hint { font-size: 11px; color: #718096; margin-bottom: 10px; }
-
-.form-group { display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* Forces children (labels and inputs) to align left */
-  text-align: left;        /* Ensures text resets to left alignment */
-  margin-bottom: 15px; }
-.form-group label { display: block;
-  width: 100%;
-  text-align: left;
-  margin-bottom: 5px;      /* Spacing between label and input */
-  font-weight: 500; }
-.form-group input {
-  width: 100%;
-  background: #1a1a1e;
-  border: 1px solid #333;
-  padding: 10px;
-  border-radius: 8px;
-  color: white;
-  outline: none;
-}
-.form-group input:focus { border-color: #ff2770; }
-
-.modal-footer {
-  padding: 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+/* Layout Styles */
+.dashboard-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background: #000000;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
 }
 
-.save-btn {
-  background: #ff2770;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.cancel-btn {
-  background: transparent;
-  color: #a0aec0;
-  border: 1px solid #333;
-  padding: 8px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.error-text { color: #ff2770; font-size: 11px; margin-top: 5px; display: block;}
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
-  background: #1a1a1e; /* Match your dark theme */
-  color: #fff;
-}
-
-/* Sidebar Styling */
+/* Sidebar */
 .sidebar {
-  width: 260px;
-  background: #25252b;
-  border-right: 1px solid #ff2770;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  height: 100vh;
+    width: 260px;
+    background: #0a0a0a;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
 }
 
-.logo-section {
-  padding: 30px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.sidebar-header {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .logo-icon {
-  background: #ff2770;
-  width: 35px;
-  height: 35px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8px;
-  font-weight: bold;
+    width: 32px;
+    height: 32px;
+    background: #ffffff;
+    color: #000000;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
 }
 
-.logo-section h2 span { color: #ff2770; }
-
-.nav-menu {
-  flex: 1;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.sidebar-header h2 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+.sidebar-header h2 span {
+    color: #3b82f6;
 }
 
-.nav-menu a {
-  text-decoration: none;
-  color: #a0aec0;
-  padding: 12px 15px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: 0.3s;
+.sidebar-nav {
+    padding: 20px 16px;
+    flex-grow: 1;
 }
 
-.nav-menu a i { font-size: 20px; }
-.nav-menu a:hover, .nav-menu a.active {
-  background: rgba(255, 39, 112, 0.1);
-  color: #ff2770;
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    background: transparent;
+    color: #a1a1aa;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
 }
 
-/* Main Content area */
-.main-content {
-  flex: 1;
-  margin-left: 260px;
-  display: flex;
-  flex-direction: column;
+.nav-item i {
+    font-size: 18px;
 }
 
-.top-nav {
-  height: 70px;
-  background: #25252b;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 30px;
-  border-bottom: 1px solid #333;
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+.nav-item.active {
+    background: #18181b;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.search-bar {
-  background: #1a1a1e;
-  padding: 8px 15px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.search-bar input {
-  background: transparent;
-  border: none;
-  color: #fff;
-  outline: none;
-}
-
-.content-body {
-  padding: 30px;
-  overflow-y: auto;
-}
-
+/* User Profile Sidebar Widget */
 .user-profile {
-  padding: 15px;
-  background: #1a1a1e;
-  margin: 20px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center; 
-  gap: 15px; /* Increased gap slightly for breathing room */
-  border: 1px solid transparent;
-  transition: 0.3s;
-  width: auto; /* Ensures it expands nicely, or set a solid width like 250px */
+    padding: 16px;
+    background: #0f0f11;
+    margin: 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.user-profile:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: #18181b;
+}
+
+.user-avatar i {
+    font-size: 36px;
+    color: #ffffff;
 }
 
 .user-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0; /* Ensures text truncation works if name is long */
+    flex-grow: 1;
+    overflow: hidden;
 }
 
 .user-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 2px; /* Add space between name and role */
+    font-weight: 600;
+    font-size: 13px;
+    margin: 0;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-role {
-  font-size: 11px;
-  color: #ff2770;
-  margin: 0;
+    font-size: 11px;
+    color: #3b82f6;
+    margin: 0;
+    margin-top: 2px;
 }
 
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #ff2770;
-  font-weight: 500;
-  font-size: 14px;
-  text-decoration: none;
+.profile-logout {
+    background: none;
+    border: none;
+    color: #52525b;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+    transition: color 0.2s;
 }
 
-/* Container for the whole modal */
+.profile-logout:hover {
+    color: #ef4444;
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-nav {
+    height: 72px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #0f0f11;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 16px;
+    border-radius: 8px;
+    width: 320px;
+    transition: all 0.2s;
+}
+
+.search-bar:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.search-bar i {
+    color: #71717a;
+    font-size: 18px;
+}
+
+.search-bar input {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    outline: none;
+    width: 100%;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+}
+.search-bar input::placeholder {
+    color: #71717a;
+}
+
+.top-user-name {
+    color: #e4e4e7;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.top-user-name i {
+    color: #3b82f6;
+    font-size: 18px;
+}
+
+.content-body {
+    padding: 40px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+}
+
+.modal-card {
+    background: #0f0f11;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
 .import-modal {
-  width: 500px;
-  background: #25252b;
-  border-radius: 15px;
-  border: 1px solid #333;
-  overflow: hidden;
+    max-width: 540px;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px) scale(0.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #333;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    padding: 24px 32px;
+    background: #0f0f11;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .modal-header h3 {
-  color: #ff2770;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Modal Body spacing */
-.modal-body {
-  padding: 30px 20px;
-  text-align: center;
-}
-
-.modal-subtitle {
-  color: #fff;
-  font-weight: 500;
-  margin-bottom: 20px;
-}
-
-/* Upload Area Fixes */
-.upload-area {
-  border: 2px dashed #444;
-  padding: 40px 20px;
-  background: #1a1a1e;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-
-/* Modal Footer alignment */
-.modal-footer {
-  padding: 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  border-top: 1px solid #333;
-}
-
-.cancel-btn {
-  padding: 10px 25px;
-  border-radius: 8px;
-  background: transparent;
-  border: 1px solid #444;
-  color: #fff;
-  cursor: pointer;
-}
-
-.save-btn {
-  padding: 10px 25px;
-  border-radius: 8px;
-  background: #ff2770;
-  border: none;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-.password-section {
-    text-align: left; /* Ensure labels/titles align left */
-    margin-top: 10px;
-}
-
-.section-title {
-    font-size: 14px;
+    margin: 0;
+    color: #ffffff;
+    font-size: 18px;
     font-weight: 600;
-    color: #fff;
-    margin-bottom: 15px;
-    text-align:  left; /* Matches your screenshot "Change Password" header */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.modal-header h3 i {
+    color: #3b82f6;
+    font-size: 20px;
+}
+
+.close-x {
+    background: none;
+    border: none;
+    color: #71717a;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.close-x:hover {
+    color: #ffffff;
+}
+
+.modal-form {
+    padding: 32px;
 }
 
 .input-group {
-    margin-bottom: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Ensure the password inputs match the name/email inputs */
+.input-group label {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #a1a1aa;
+}
+
 .input-group input {
-    width: 100%;
-    background: #1a1a1e;
-    border: 1px solid #333;
-    padding: 10px;
-    border-radius: 8px;
-    color: white;
+    background: #18181b;
+    border: 1px solid #27272a;
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 14px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
+}
+
+.input-group input:hover {
+    border-color: #3f3f46;
 }
 
 .input-group input:focus {
-    border-color: #ff2770;
+    border-color: #3b82f6;
+    background: #141417;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
-.mt-10 {
-    margin-top: 10px;
+.password-section {
+    margin-top: 32px;
+    padding: 24px;
+    background: #18181b;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Style for the validation error message below password */
+.section-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #ffffff;
+    margin-bottom: 16px;
+}
+
+.mt-10 { margin-top: 10px; }
+
 .err-msg {
-    color: #ff2770;
-    font-size: 11px;
-    margin-top: 5px;
-    display: block;
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 6px;
 }
-.user-avatar i {
-    font-size: 40px;
-    color: #ff2770;
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 32px;
+}
+
+.btn-secondary {
+    background: #27272a;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-secondary:hover {
+    background: #3f3f46;
+}
+
+.btn-primary {
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    padding: 10px 24px;
+    font-size: 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.btn-primary:hover {
+    background: #f4f4f5;
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Upload Area specific styles */
+.text-center { text-align: center; }
+.modal-subtitle {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.upload-area {
+    border: 2px dashed #27272a;
+    padding: 40px 24px;
+    background: #18181b;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s ease;
+}
+
+.upload-area.dragging {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.upload-icon-circle {
+    width: 56px;
+    height: 56px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.upload-area p {
+    color: #e4e4e7;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+.upload-area .file-name {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 13px;
 }
 </style>

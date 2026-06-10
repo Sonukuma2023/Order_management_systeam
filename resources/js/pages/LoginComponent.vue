@@ -1,74 +1,81 @@
 <template>
-  <div class="auth-body">
-    <div class="container">
-      <div class="curved-shape"></div>
-      
-      <div class="form-box">
-        <!-- Dynamic Header Title -->
-        <h2 class="title">{{ isForgotPasswordMode ? 'Reset Password' : 'Login' }}</h2>
-        
-        <!-- Status success indicator -->
-        <div v-if="statusMessage" class="status-success-alert">
+  <div class="auth-wrapper">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    
+    <div class="auth-card">
+      <!-- Left Panel (Visual) -->
+      <div class="auth-visual">
+        <div class="visual-content">
+          <div class="logo-placeholder">
+            <div class="logo-icon"></div>
+            <span>OrderSync</span>
+          </div>
+          <h2>Manage your business<br>with precision.</h2>
+          <p>The ultimate order management system designed to streamline your workflow and accelerate growth.</p>
+        </div>
+        <div class="visual-overlay"></div>
+      </div>
+
+      <!-- Right Panel (Form) -->
+      <div class="auth-form-container">
+        <div class="form-header">
+          <h1>{{ isForgotPasswordMode ? 'Reset Password' : 'Welcome back' }}</h1>
+          <p>{{ isForgotPasswordMode ? 'Enter your email to receive a reset link.' : 'Please enter your details to sign in to your account.' }}</p>
+        </div>
+
+        <div v-if="statusMessage" class="status-alert">
             {{ statusMessage }}
         </div>
 
-        <form @submit.prevent="submit">
-          <!-- EMAIL INPUT (Active across both modes) -->
-          <div class="input-box">
-            <input 
-              v-model="form.email" 
-              type="email"  
-              :class="{'input-error': shouldShowError('email')}"
-              @blur="touched.email = true"
-               
-            >
-            <label>Email Address</label>
-            <i class='bx bxs-user'></i>
+        <form @submit.prevent="submit" class="auth-form">
+          <div class="input-group">
+            <label>Email address</label>
+            <div class="input-wrapper">
+              <i class='bx bx-envelope'></i>
+              <input 
+                v-model="form.email" 
+                type="email"  
+                :class="{'has-error': shouldShowError('email')}"
+                @blur="touched.email = true"
+                placeholder="name@company.com"
+              >
+            </div>
+            <span v-if="shouldShowError('email')" class="error-msg">{{ form.errors.email }}</span>
           </div>
-          <span v-if="shouldShowError('email')" class="error-text">{{ form.errors.email }}</span>
 
-          <!-- PASSWORD INPUT BLOCK (Hidden while using Forgot Password system view) -->
-          <div v-if="!isForgotPasswordMode">
-            <div class="input-box">
+          <div v-if="!isForgotPasswordMode" class="input-group">
+            <div class="label-row">
+              <label>Password</label>
+              <button type="button" @click="toggleMode" class="text-link">Forgot password?</button>
+            </div>
+            <div class="input-wrapper">
+              <i class='bx bx-lock-alt'></i>
               <input 
                 v-model="form.password" 
                 type="password"  
-                :class="{'input-error': shouldShowError('password')}"
+                :class="{'has-error': shouldShowError('password')}"
                 @blur="touched.password = true"
-                 
+                placeholder="••••••••"
               >
-              <label>Password</label>
-              <i class='bx bxs-lock-alt'></i>
             </div>
-            <span v-if="shouldShowError('password')" class="error-text">{{ form.errors.password }}</span>
-            
-            <!-- Forgot Password trigger button option wrapper -->
-            <div class="forgot-link-wrapper">
-               <button type="button" @click="toggleMode" class="ghost-link-btn">Forgot Password?</button>
-            </div>
+            <span v-if="shouldShowError('password')" class="error-msg">{{ form.errors.password }}</span>
           </div>
 
-          <!-- DYNAMIC ACTION CTA BUTTON -->
-          <button type="submit" class="btn" :disabled="form.processing">
-            <span v-if="form.processing">Authenticating...</span>
-            <span v-else>{{ isForgotPasswordMode ? 'Send Reset Link' : 'Login' }}</span>
+          <button type="submit" class="btn-primary" :disabled="form.processing">
+            <span v-if="form.processing" class="spinner"></span>
+            <span v-else>{{ isForgotPasswordMode ? 'Send Reset Link' : 'Sign in' }}</span>
           </button>
-
-          <!-- BOTTOM INTERPOLATING LINK LINKS -->
-          <div class="footer-link">
-            <p v-if="!isForgotPasswordMode">
-              Don't have an account? <Link href="/register">Sign Up</Link>
-            </p>
-            <p v-else>
-              Remembered your password? <button type="button" @click="toggleMode" class="inline-toggle-btn">Back to Login</button>
-            </p>
-          </div>
         </form>
-      </div>
 
-      <div class="info-content">
-        <h2>WELCOME BACK!</h2>
-        <p>We are happy to have you with us again. If you need anything, we are here to help.</p>
+        <div class="form-footer">
+          <p v-if="!isForgotPasswordMode">
+            Don't have an account? <Link href="/register" class="text-link accent">Sign up for free</Link>
+          </p>
+          <p v-else>
+            Remember your password? <button type="button" @click="toggleMode" class="text-link accent">Back to sign in</button>
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -82,7 +89,6 @@ const form = useForm({ email: '', password: '' });
 const touched = reactive({ email: false, password: false });
 const wasSubmitted = ref(false);
 
-// View Mode Toggle tracking definitions
 const isForgotPasswordMode = ref(false);
 const statusMessage = ref('');
 
@@ -102,7 +108,6 @@ const submit = () => {
   statusMessage.value = '';
 
   if (isForgotPasswordMode.value) {
-      // POST out to backend forgot-password handler engine
       form.post('/forgot-password', {
           onSuccess: () => {
               statusMessage.value = "Password reset email link issued successfully.";
@@ -111,172 +116,339 @@ const submit = () => {
           }
       });
   } else {
-      // Execute original login pipeline routine
       form.post('/login', { onFinish: () => form.reset('password') });
   }
 };
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-.auth-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #25252b;
-  font-family: 'Poppins', sans-serif;
-}
-
-.container {
+.auth-wrapper {
   position: relative;
-  width: 850px;
-  height: 500px;
-  background: #25252b;
-  border: 2px solid #ff2770;
-  box-shadow: 0 0 25px #ff2770;
-  overflow: hidden;
+  min-height: 100vh;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000000;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  color: #ffffff;
+  padding: 20px;
 }
 
-.curved-shape {
+/* Ambient Glow Orbs */
+.glow-orb {
   position: absolute;
-  right: 0;
-  top: 0;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 0;
+  opacity: 0.6;
+}
+.orb-1 {
+  width: 600px;
   height: 600px;
+  background: #3b82f6;
+  top: -200px;
+  left: -100px;
+  animation: floatOrb 15s ease-in-out infinite alternate;
+}
+.orb-2 {
   width: 500px;
-  background: linear-gradient(45deg, #25252b, #ff2770);
-  transform: rotate(10deg) skewY(40deg);
-  transform-origin: bottom right;
+  height: 500px;
+  background: #8b5cf6;
+  bottom: -150px;
+  right: -100px;
+  animation: floatOrb 20s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(50px, 50px); }
+}
+
+.auth-card {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: 100%;
+  max-width: 1080px;
+  min-height: 640px;
+  background: rgba(20, 20, 22, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* Left Visual Side */
+.auth-visual {
+  flex: 1;
+  position: relative;
+  background: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1920') center/cover;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.visual-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(88, 28, 135, 0.8) 100%);
   z-index: 1;
 }
 
-.form-box {
-  width: 50%;
-  padding: 0 60px;
+.visual-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 8px;
+}
+
+.visual-content h2 {
+  margin-top: auto;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 24px;
+  color: #ffffff;
+}
+
+.visual-content p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 80%;
+}
+
+/* Right Form Side */
+.auth-form-container {
+  flex: 1;
+  padding: 60px 80px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  z-index: 2;
+  background: #0f0f11;
 }
 
-.title { font-size: 32px; color: #fff; text-align: center; margin-bottom: 20px; }
+.form-header {
+  margin-bottom: 40px;
+}
+.form-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+  color: #fff;
+}
+.form-header p {
+  font-size: 15px;
+  color: #8b8b93;
+  line-height: 1.5;
+}
 
-.input-box {
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e4e4e7;
+}
+
+.input-wrapper {
   position: relative;
-  width: 100%;
-  height: 50px;
-  margin-top: 25px;
-  border-bottom: 2px solid #fff;
+  display: flex;
+  align-items: center;
 }
 
-.input-box input {
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #fff;
-  font-size: 16px;
-}
-
-.input-box label {
+.input-wrapper i {
   position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  color: #fff;
-  transition: .5s;
+  left: 16px;
+  font-size: 20px;
+  color: #71717a;
   pointer-events: none;
+  transition: color 0.2s;
 }
 
-/* Kept input labels dynamic for bound inputs data state values */
-.input-box input:focus ~ label, 
-.input-box input:valid ~ label {
-  top: -5px;
-  color: #ff2770;
-}
-
-.input-box i { position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: #fff; }
-
-.btn {
+.input-wrapper input {
   width: 100%;
-  height: 45px;
-  background: linear-gradient(90deg, #ff2770, #bc184d);
-  border: none;
-  border-radius: 40px;
+  height: 48px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 0 16px 0 44px;
   color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper input::placeholder {
+  color: #52525b;
+}
+
+.input-wrapper input:hover {
+  border-color: #3f3f46;
+}
+
+.input-wrapper input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #141417;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+.input-wrapper input:focus + i,
+.input-wrapper input:focus ~ i {
+  color: #3b82f6;
+}
+
+.has-error {
+  border-color: #ef4444 !important;
+}
+.error-msg {
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.btn-primary {
+  height: 48px;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 30px;
-  box-shadow: 0 0 10px #ff2770;
-}
-
-.info-content {
-  width: 50%;
+  transition: all 0.2s ease;
+  margin-top: 8px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  text-align: right;
-  padding: 0 40px;
-  z-index: 2;
-  color: #fff;
 }
 
-.footer-link { text-align: center; margin-top: 20px; color: #fff; }
-.footer-link a { color: #ff2770; text-decoration: none; font-weight: 600; }
-.error-text { color: #ff2770; font-size: 12px; display: block; margin-top: 5px; }
-
-/* Custom Additions matching your styling theme rules */
-.forgot-link-wrapper {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 10px;
+.btn-primary:hover {
+  background: #f4f4f5;
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
-.ghost-link-btn {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 13px;
-    cursor: pointer;
-    font-family: 'Poppins', sans-serif;
-    transition: color 0.2s;
+.text-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #a1a1aa;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.text-link:hover {
+  color: #ffffff;
+}
+.text-link.accent {
+  color: #ffffff;
+}
+.text-link.accent:hover {
+  text-decoration: underline;
 }
 
-.ghost-link-btn:hover {
-    color: #ff2770;
-    text-decoration: underline;
+.form-footer {
+  margin-top: 32px;
+  text-align: center;
+}
+.form-footer p {
+  font-size: 14px;
+  color: #a1a1aa;
 }
 
-.inline-toggle-btn {
-    background: none;
-    border: none;
-    color: #ff2770;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: inherit;
-    font-family: 'Poppins', sans-serif;
-    padding: 0;
+.status-alert {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 24px;
 }
 
-.inline-toggle-btn:hover {
-    text-decoration: underline;
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.status-success-alert {
-    background: rgba(46, 204, 113, 0.1);
-    border: 1px solid #2ecc71;
-    color: #2ecc71;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 13px;
-    text-align: center;
-    margin-bottom: 10px;
+@media (max-width: 1024px) {
+  .auth-card {
+    flex-direction: column;
+    max-width: 500px;
+    min-height: auto;
+  }
+  .auth-visual {
+    display: none;
+  }
+  .auth-form-container {
+    padding: 48px 40px;
+    border-radius: 24px;
+  }
 }
-
-.input-error {
-    border-color: #ff2770 !important;
+@media (max-width: 640px) {
+  .auth-form-container {
+    padding: 32px 24px;
+  }
 }
 </style>
