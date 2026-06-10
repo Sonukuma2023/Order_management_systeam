@@ -9,7 +9,12 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
 use Carbon\Carbon;
-
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+ 
+use Illuminate\Support\Facades\Http;
+use App\Jobs\ImportProductsJob;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
@@ -41,41 +46,41 @@ class VendorController extends Controller
         $result = [];
 
        if (!empty($orderdata['draft_orders'])) {
-    foreach ($orderdata['draft_orders'] as $order) {
-        $hasMatch = false;
+            foreach ($orderdata['draft_orders'] as $order) {
+                $hasMatch = false;
 
-        if (!empty($order['line_items'])) {
-            foreach ($order['line_items'] as $item) {
-                $productId = $item['product_id'] ?? null;
+                if (!empty($order['line_items'])) {
+                    foreach ($order['line_items'] as $item) {
+                        $productId = $item['product_id'] ?? null;
 
-                // Check if product belongs to logged user
-                if (in_array($productId, $userProductIds)) {
-                    $hasMatch = true;
+                        // Check if product belongs to logged user
+                        if (in_array($productId, $userProductIds)) {
+                            $hasMatch = true;
 
-                    // FIX: Get the individual item price, fallback to calculated price if missing
-                    $itemPrice = isset($item['price']) ? (float)$item['price'] : 0;
-                    $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
+                            // FIX: Get the individual item price, fallback to calculated price if missing
+                            $itemPrice = isset($item['price']) ? (float)$item['price'] : 0;
+                            $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
 
-                    // Calculate actual sales for this specific vendor item
-                    $itemTotalSales = $itemPrice * $quantity;
-                    $total_sales += $itemTotalSales;
+                            // Calculate actual sales for this specific vendor item
+                            $itemTotalSales = $itemPrice * $quantity;
+                            $total_sales += $itemTotalSales;
 
-                    $result[] = [
-                        'order' => $order['name'] ?? null,
-                        'title' => $item['title'] ?? null,
-                        'name'  => $item['name'] ?? null,
-                        'price' => $itemTotalSales, // Send the item total to the chart array
-                    ];
+                            $result[] = [
+                                'order' => $order['name'] ?? null,
+                                'title' => $item['title'] ?? null,
+                                'name'  => $item['name'] ?? null,
+                                'price' => $itemTotalSales, // Send the item total to the chart array
+                            ];
+                        }
+                    }
+                }
+
+                // Count unique orders for this vendor
+                if ($hasMatch) {
+                    $order_count++;
                 }
             }
         }
-
-        // Count unique orders for this vendor
-        if ($hasMatch) {
-            $order_count++;
-        }
-    }
-}
 
         return Inertia::render('VendorDashboard', [
             'product_count' => $product_count,
@@ -123,7 +128,7 @@ class VendorController extends Controller
         ]);
 
         $validated['auth_id'] = Auth::id();
-
+         
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             
@@ -135,10 +140,13 @@ class VendorController extends Controller
         }
          
         $shopifyResponse = $this->shopify_products_create($validated);
+        
 
         if (isset($shopifyResponse['product']['id'])) {
             $validated['shopify_id'] = $shopifyResponse['product']['id'];
+            $validated['move_to_shopify'] = 1;
         }
+         
         
         $data = Product::create($validated);
         
@@ -221,8 +229,6 @@ class VendorController extends Controller
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
         }
-
-       
         $user->save();
 
         return back();
@@ -507,6 +513,208 @@ class VendorController extends Controller
 
             return false;
         }
+    }
+
+    public function reports_products()
+    {
+        $orderdata = $this->get_orders($start = null, $end = null);
+        
+        $userProductIds = Product::where('auth_id', Auth::id())
+            ->pluck('shopify_id')
+            ->toArray();
+
+        $result = [];
+        
+        foreach (($orderdata['draft_orders'] ?? []) as $order) {
+            foreach (($order['line_items'] ?? []) as $item) {
+                $productId = $item['product_id'] ?? null;
+
+                if (!in_array($productId, $userProductIds)) {
+                    continue;
+                }
+
+                $product = $this->findproduct($productId);
+                if (!$product) continue;
+
+                $quantity = (int) ($item['quantity'] ?? 1);
+                $price    = (float) ($item['price'] ?? 0);
+                $revenue  = $price * $quantity;
+
+                if (!isset($result[$product->id])) {
+                    $result[$product->id] = [
+                        'product_id'    => $product->id,
+                        'name'          => $product->name,
+                        'image'         => $product->image,
+                        'status'        => $product->status,
+                        'product_price' => $product->price,
+                        'quantity'      => 0,
+                        'total'         => 0,
+                    ];
+                }
+
+                $result[$product->id]['quantity'] += $quantity;
+                $result[$product->id]['total'] += $revenue;
+            }
+        }
+        
+        $allItems = array_values($result);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10; 
+        $currentItems = array_slice($allItems, ($currentPage - 1) * $perPage, $perPage);
+        
+        $paginatedResult = new LengthAwarePaginator(
+            $currentItems, 
+            count($allItems), 
+            $perPage, 
+            $currentPage, 
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        );
+        
+        return Inertia::render('Vendor/product_report', [
+            'reportData' => $paginatedResult
+        ]);
+    }
+
+
+    public function findproduct($productId)
+    {
+        return Product::select(
+            'id',
+            'name',
+            'image',
+            'status',
+            'quantity',
+            'price',
+            'shopify_id'
+        )->firstWhere('shopify_id', $productId);
+    }
+
+    public function import_product() {
+    return Inertia::render('Vendor/import_product_data', [
+        // Using paginate(5) will return 5 items per page along with pagination metadata
+        'initialProducts' => Product::latest()->paginate(5)
+    ]);
+}
+
+    // public function import(Request $request)
+    // {
+    //     $request->validate([
+    //         'file' => 'required|file|mimes:csv,txt',
+    //     ]);
+
+    //     $file = $request->file('file');
+
+    //     if (($handle = fopen($file->getRealPath(), 'r')) !== false) {
+
+    //         $headers = fgetcsv($handle, 1000, ',');
+
+    //         // Remove spaces from header names
+    //         $headers = array_map('trim', $headers);
+
+    //         while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+
+    //             // Skip invalid rows
+    //             if (count($headers) !== count($data)) {
+    //                 continue;
+    //             }
+
+    //             $row = array_combine($headers, $data);
+
+    //             // Skip if SKU is empty
+    //             if (empty($row['sku_code'])) {
+    //                 continue;
+    //             }
+
+    //             Product::updateOrCreate(
+    //                 [
+    //                     'sku_code' => trim($row['sku_code']),
+    //                 ],
+    //                 [
+    //                     'name'            => $row['name'] ?? '',
+    //                     'image'           => $row['image'] ?? null,
+    //                     'category'        => $row['category'] ?? null,
+    //                     'price'           => (float) ($row['price'] ?? 0),
+    //                     'description'     => $row['description'] ?? null,
+    //                     'quantity'        => (int) ($row['quantity'] ?? 0),
+    //                     'status'          => $row['status'] ?? 'active',
+    //                     'move_to_shopify' => 0,
+    //                     'auth_id'         => auth()->id(), // Current logged-in user
+    //                     'shopify_id'      => null,
+    //                 ]
+    //             );
+    //         }
+
+    //         fclose($handle);
+    //     }
+
+    //     return redirect()->back()->with(
+    //         'success',
+    //         'Products imported successfully.'
+    //     );
+    // }
+
+    /**
+     * Shopify Integration Setup
+     */
+
+     public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt',
+        ]);
+        $path = Storage::disk('local')->putFile(
+            'imports',
+            $request->file('file')
+        );
+
+        Log::info('CSV Stored', [
+            'path' => $path,
+            'full_path' => Storage::disk('local')->path($path),
+            'exists' => Storage::disk('local')->exists($path),
+        ]);
+
+        ImportProductsJob::dispatch(
+            $path,
+            auth()->id()
+        );
+
+        return back()->with(
+            'success',
+            'Import started in background.'
+        );
+    }
+    public function syncToShopify($id) 
+    {
+        
+        $validated = Product::findOrFail($id);
+        $shopifyResponse = $this->shopify_products_create($validated);
+
+        if (isset($shopifyResponse['product']['id'])) {
+            $validated->update([
+                'name'            => $validated['name'],
+                'price'           => $validated['price'],
+                'quantity'        => $validated['quantity'],
+                'status'          => $validated['status'],
+                'description'     => $validated['description'],
+                'shopify_id'      => (string) $shopifyResponse['product']['id'],
+                'move_to_shopify' => 1
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product synced to Shopify successfully!',
+                'product' => $validated
+            ]);
+        }
+
+        // Capture errors if Shopify rejected the properties layout structures
+        $errorMessage = $shopifyResponse['errors'] ?? 'Unknown Shopify API Error';
+        Log::error('Shopify sync failure details:', ['response' => $shopifyResponse]);
+
+        return response()->json([
+            'success' => false,
+            'error'   => 'Shopify Sync Failed: ' . json_encode($errorMessage)
+        ], 422);
     }
 
 

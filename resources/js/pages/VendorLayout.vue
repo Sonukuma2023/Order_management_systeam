@@ -4,6 +4,9 @@ import { Link, useForm, usePage } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 const page = usePage();
 const showProfileModal = ref(false);
+// const showReports = ref(false);
+const showReports = ref(page.url.startsWith('/vendor/reports'));
+
 const profileForm = useForm({
     name: page.props.auth.user.name,
     email: page.props.auth.user.email,
@@ -47,36 +50,92 @@ const updateProfile = () => {
     <div class="dashboard-wrapper">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Vendor Panel</h2>
-            </div>
-            <nav class="sidebar-nav">
-                <Link href="/vendor/dashboard" class="nav-item">
-                    <i class='bx bxs-dashboard'></i> Dashboard
-                </Link>
+    <div class="sidebar-header">
+        <h2>Vendor Panel</h2>
+    </div>
 
-                <Link href="/vendor/products" class="nav-item">
-                    <i class='bx bxs-shopping-bag'></i> Products
-                </Link>
+    <nav class="sidebar-nav">
+        <Link href="/vendor/dashboard" class="nav-item">
+            <i class="bx bxs-dashboard"></i>
+            <span>Dashboard</span>
+        </Link>
 
-                <Link href="/vendor/orders" class="nav-item">
-                    <i class='bx bxs-cart'></i> Orders
-                </Link>
+        <Link href="/vendor/products" class="nav-item">
+            <i class="bx bxs-shopping-bag"></i>
+            <span>Products</span>
+        </Link>
 
-            </nav>
-            <div class="user-profile" @click="openProfileModal">
-                <div class="user-avatar">
-                    <i class='bx bxs-user-circle'></i>
+        <Link href="/vendor/orders" class="nav-item">
+            <i class="bx bxs-cart"></i>
+            <span>Orders</span>
+        </Link>
+
+         <Link href="/vendor/import_product" class="nav-item">
+            <i class="bx bxs-cart"></i>
+            <span>Import product</span>
+        </Link>
+
+        <!-- Reports Menu -->
+        <div class="menu-section">
+                    <div 
+                        class="nav-item reports-toggle" 
+                        :class="{ 'active': $page.url.startsWith('/vendor/reports') }"
+                        @click="showReports = !showReports"
+                    >
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i class="bx bxs-report"></i>
+                            <span>Reports</span>
+                        </div>
+                        <i :class="showReports ? 'bx bx-chevron-up' : 'bx bx-chevron-down'"></i>
+                    </div>
+
+                    <div v-if="showReports" class="submenu">
+                        <Link
+                            href="/vendor/reports/products"
+                            class="nav-item nav-subitem"
+                            :class="{ 'sub-active': $page.url === '/vendor/reports/products' }"
+                            @click="handleSubitemClick"
+                        >
+                            Product Report
+                        </Link>
+                    </div>
                 </div>
-                <div class="user-info">
-                    <p class="user-name">{{ $page.props.auth.user.name }}</p>
-                    <p class="user-role">Vendor Account</p>
-                </div>
-                <Link href="/logout" method="post" as="button" class="profile-logout" @click.stop>
-                    <i class='bx bx-log-out'></i>
-                </Link>
-            </div>
-        </aside>
+    </nav>
+
+    <div class="user-profile" @click="openProfileModal">
+        <div class="user-avatar">
+            <i class="bx bxs-user-circle"></i>
+        </div>
+
+        <div class="user-info">
+            <p class="user-name">
+                {{ $page.props.auth.user.name }}
+            </p>
+            <p class="user-role">
+                Vendor Account
+            </p>
+        </div>
+
+        <Link
+            href="/logout"
+            method="post"
+            as="button"
+            class="profile-logout"
+            @click.stop
+        >
+            <i class="bx bx-log-out"></i>
+        </Link>
+         <!-- <Link
+            :href="route('logout')"
+            method="post"
+            as="button"
+            class="profile-logout"
+        >
+            <i class="bx bx-log-out"></i>
+            Logout
+        </Link> -->
+    </div>
+</aside>
 
         <main class="main-content">
             <header class="top-nav">

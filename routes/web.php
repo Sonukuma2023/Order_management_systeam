@@ -12,6 +12,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Vendor\VendorController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use Illuminate\Support\Facades\Redis;
+ 
 use App\Http\Controllers\ChatbotController;
 use Inertia\Inertia;
 
@@ -78,6 +80,14 @@ Route::prefix('vendor')
         Route::delete('/products/{id}', [VendorController::class, 'destroy'])
             ->name('products.destroy');
         Route::put('/profile/update', [VendorController::class, 'update_profile'])->name('profile.update');
+
+        Route::get('/reports/products', [VendorController::class, 'reports_products'])
+            ->name('reports.products');
+
+        Route::get('/import_product', [VendorController::class, 'import_product'])->name('import_product');
+
+        Route::post('/products/import', [VendorController::class, 'import'])->name('products.import');
+        Route::post('/products/{id}/sync-shopify', [VendorController::class, 'syncToShopify'])->name('products.sync');
 });
 
 
@@ -104,6 +114,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::put('/users/{id}', [DashboardController::class, 'update_user'])->name('users.update');
     Route::post('users', [CustomerController::class, 'addnewuser'])->name('users');
     Route::post('/admin/chatbot/query', [ChatbotController::class, 'handleQuery']);
+
 });
 
 // Route::post('/webhook/product',[ProductController::class,'webhook_create_products'])->name('webhook.product');
@@ -112,6 +123,7 @@ Route::post('/webhook/delete', [ProductController::class, 'webhook_delete_produc
 Route::get('/getorders',[OrderController::class,'index'])->name('getorders');  
 
 Route::post('/logout', function () {
+
     Auth::logout();
     session()->invalidate();
     session()->regenerateToken();
@@ -121,5 +133,7 @@ Route::post('/logout', function () {
 
 
 
+
 Route::post('/webhook/product', [ProductController::class, 'webhook_create_products'])
     ->name('webhook.product');
+
