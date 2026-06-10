@@ -10,10 +10,11 @@ use App\Models\Product;
 use App\Models\Category;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
  
 use Illuminate\Support\Facades\Http;
-
+use App\Jobs\ImportProductsJob;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
@@ -127,7 +128,7 @@ class VendorController extends Controller
         ]);
 
         $validated['auth_id'] = Auth::id();
-
+         
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             
@@ -143,7 +144,9 @@ class VendorController extends Controller
 
         if (isset($shopifyResponse['product']['id'])) {
             $validated['shopify_id'] = $shopifyResponse['product']['id'];
+            $validated['move_to_shopify'] = 1;
         }
+         
         
         $data = Product::create($validated);
         
@@ -587,112 +590,99 @@ class VendorController extends Controller
     }
 
     public function import_product() {
-        return Inertia::render('Vendor/import_product_data', [
-            'initialProducts' => $products = Product::latest()->take(5)->get()
-        ]);
-    }
+    return Inertia::render('Vendor/import_product_data', [
+        // Using paginate(5) will return 5 items per page along with pagination metadata
+        'initialProducts' => Product::latest()->paginate(5)
+    ]);
+}
 
-    /**
-     * File Upload and Parsing Process
-     */
-    // public function import(Request $request) {
+    // public function import(Request $request)
+    // {
     //     $request->validate([
-    //         'file' => 'required|file|mimes:csv,txt'
+    //         'file' => 'required|file|mimes:csv,txt',
     //     ]);
 
     //     $file = $request->file('file');
-        
+
     //     if (($handle = fopen($file->getRealPath(), 'r')) !== false) {
+
     //         $headers = fgetcsv($handle, 1000, ',');
 
+    //         // Remove spaces from header names
+    //         $headers = array_map('trim', $headers);
+
     //         while (($data = fgetcsv($handle, 1000, ',')) !== false) {
-                
-    //             if (count($headers) !== count($data)) continue;
+
+    //             // Skip invalid rows
+    //             if (count($headers) !== count($data)) {
+    //                 continue;
+    //             }
 
     //             $row = array_combine($headers, $data);
-                
+
+    //             // Skip if SKU is empty
+    //             if (empty($row['sku_code'])) {
+    //                 continue;
+    //             }
+
     //             Product::updateOrCreate(
-    //                 ['sku_code' => $row['sku_code']], 
     //                 [
-    //                     'name'            => $row['name'],
+    //                     'sku_code' => trim($row['sku_code']),
+    //                 ],
+    //                 [
+    //                     'name'            => $row['name'] ?? '',
     //                     'image'           => $row['image'] ?? null,
     //                     'category'        => $row['category'] ?? null,
-    //                     'price'           => (float) $row['price'],
+    //                     'price'           => (float) ($row['price'] ?? 0),
     //                     'description'     => $row['description'] ?? null,
-    //                     'quantity'        => (int) $row['quantity'],
+    //                     'quantity'        => (int) ($row['quantity'] ?? 0),
     //                     'status'          => $row['status'] ?? 'active',
-    //                     'move_to_shopify' => 0 ,
-    //                     'auth_id' =>28,
-    //                     'shopify_id' =>null
+    //                     'move_to_shopify' => 0,
+    //                     'auth_id'         => auth()->id(), // Current logged-in user
+    //                     'shopify_id'      => null,
     //                 ]
     //             );
     //         }
+
     //         fclose($handle);
     //     }
 
-    //     // Redirect back so Inertia refreshes the frontend component state seamlessly
-    //     return redirect()->back()->with('success', 'Products imported successfully.');
+    //     return redirect()->back()->with(
+    //         'success',
+    //         'Products imported successfully.'
+    //     );
     // }
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:csv,txt',
-        ]);
-
-        $file = $request->file('file');
-
-        if (($handle = fopen($file->getRealPath(), 'r')) !== false) {
-
-            $headers = fgetcsv($handle, 1000, ',');
-
-            // Remove spaces from header names
-            $headers = array_map('trim', $headers);
-
-            while (($data = fgetcsv($handle, 1000, ',')) !== false) {
-
-                // Skip invalid rows
-                if (count($headers) !== count($data)) {
-                    continue;
-                }
-
-                $row = array_combine($headers, $data);
-
-                // Skip if SKU is empty
-                if (empty($row['sku_code'])) {
-                    continue;
-                }
-
-                Product::updateOrCreate(
-                    [
-                        'sku_code' => trim($row['sku_code']),
-                    ],
-                    [
-                        'name'            => $row['name'] ?? '',
-                        'image'           => $row['image'] ?? null,
-                        'category'        => $row['category'] ?? null,
-                        'price'           => (float) ($row['price'] ?? 0),
-                        'description'     => $row['description'] ?? null,
-                        'quantity'        => (int) ($row['quantity'] ?? 0),
-                        'status'          => $row['status'] ?? 'active',
-                        'move_to_shopify' => 0,
-                        'auth_id'         => auth()->id(), // Current logged-in user
-                        'shopify_id'      => null,
-                    ]
-                );
-            }
-
-            fclose($handle);
-        }
-
-        return redirect()->back()->with(
-            'success',
-            'Products imported successfully.'
-        );
-    }
 
     /**
      * Shopify Integration Setup
      */
+
+     public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt',
+        ]);
+        $path = Storage::disk('local')->putFile(
+            'imports',
+            $request->file('file')
+        );
+
+        Log::info('CSV Stored', [
+            'path' => $path,
+            'full_path' => Storage::disk('local')->path($path),
+            'exists' => Storage::disk('local')->exists($path),
+        ]);
+
+        ImportProductsJob::dispatch(
+            $path,
+            auth()->id()
+        );
+
+        return back()->with(
+            'success',
+            'Import started in background.'
+        );
+    }
     public function syncToShopify($id) 
     {
         

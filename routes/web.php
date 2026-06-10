@@ -12,6 +12,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Vendor\VendorController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use Illuminate\Support\Facades\Redis;
+ 
 use App\Http\Controllers\ChatbotController;
 use Inertia\Inertia;
 
@@ -134,3 +136,4 @@ Route::post('/logout', function () {
 
 Route::post('/webhook/product', [ProductController::class, 'webhook_create_products'])
     ->name('webhook.product');
+

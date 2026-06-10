@@ -45,9 +45,26 @@
         <div v-else class="empty-state">
           <p>No products imported yet. Click "Import Products" to start.</p>
         </div>
+
+        <div v-if="paginationLinks && paginationLinks.length > 3" class="pagination-footer">
+          <div class="pagination-info">
+            Showing <span>{{ paginationMeta?.from || 1 }}</span> to <span>{{ paginationMeta?.to || products.length }}</span> of <span>{{ paginationMeta?.total || products.length }}</span> products
+          </div>
+          <div class="pagination-buttons">
+            <Link
+              v-for="(link, index) in paginationLinks"
+              :key="index"
+              :href="link.url || '#'"
+              v-html="link.label"
+              class="pagination-link"
+              :class="{ 'active': link.active, 'disabled': !link.url }"
+              :preserve-scroll="true"
+            />
+          </div>
+        </div>
       </div>
 
-      <div v-if="isModalOpen" class="modal-overlay"     >
+      <div v-if="isModalOpen" class="modal-overlay">
         <div class="modal-content">
           <h3>Import Products CSV/Excel</h3>
           <p class="modal-subtitle">Select a file containing your product records.</p>
@@ -84,15 +101,16 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useForm, usePage } from '@inertiajs/vue3';
+import { ref, watch, computed } from 'vue';
+import { useForm, usePage, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 import VendorLayout from '../VendorLayout.vue';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
+  // Accept either a direct array or a paginated object payload from Laravel/Inertia
   initialProducts: {
-    type: Array,
+    type: [Array, Object],
     default: () => []
   }
 });
@@ -100,15 +118,32 @@ const props = defineProps({
 const isModalOpen = ref(false);
 const page = usePage();
 
-// FIX 1: Map products to a mutable ref array instead of a strict read-only computed property
-const products = ref([...props.initialProducts]);
+// Safely unpack reactive list array based on backend structure variations
+const getProductsArray = (data) => {
+  if (!data) return [];
+  return Array.isArray(data) ? data : (data.data || []);
+};
 
-// FIX 2: Watch for page property mutations from the Inertia sheet framework to update cleanly
+const products = ref(getProductsArray(props.initialProducts));
+
+// Extract pagination metadata setups dynamically
+const paginationLinks = computed(() => props.initialProducts?.links || page.props.initialProducts?.links || null);
+const paginationMeta = computed(() => {
+  const source = props.initialProducts || page.props.initialProducts;
+  if (!source || Array.isArray(source)) return null;
+  return {
+    from: source.from,
+    to: source.to,
+    total: source.total
+  };
+});
+
+// Watch for changes coming from Inertia server partial updates
 watch(
   () => page.props.initialProducts,
   (newProducts) => {
     if (newProducts) {
-      products.value = [...newProducts];
+      products.value = getProductsArray(newProducts);
     }
   },
   { deep: true, immediate: true }
@@ -126,16 +161,14 @@ const handleFileUpload = () => {
   form.post('/vendor/products/import', {
     preserveScroll: true,
     onSuccess: () => {
-      // Close the modal and reset form values
       isModalOpen.value = false;
       form.reset();
       
-      // Beautiful SweetAlert Success Popup
       Swal.fire({
         title: 'Imported Successfully!',
         text: 'Your products have been processed and loaded into the management table.',
         icon: 'success',
-        confirmButtonColor: '#008060', // Matches your Shopify green button
+        confirmButtonColor: '#008060',
         confirmButtonText: 'Great, thanks!'
       });
     },
@@ -147,7 +180,6 @@ const handleFileUpload = () => {
 };
 
 const moveToShopify = async (product) => {
-  // Safe mutation now that elements live within standard ref arrays
   product.isSyncing = true;
 
   try {
@@ -158,16 +190,15 @@ const moveToShopify = async (product) => {
     if (data.success) {
       product.move_to_shopify = 1;
       
-      // SweetAlert Success Notification
       Swal.fire({
         title: 'Synced!',
         text: `${product.name} synced to Shopify dashboard successfully!`,
         icon: 'success',
-        toast: true,               // Makes it an elegant corner notification
-        position: 'top-end',       // Places it at the top right corner
-        showConfirmButton: false,  // Removes the button for a cleaner look
-        timer: 3500,               // Automatically closes after 3.5 seconds
-        timerProgressBar: true     // Adds a visual countdown bar
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true
       });
     }
   } catch (error) {
@@ -200,23 +231,8 @@ h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
 .file-name-hint { margin-top: 0.5rem; font-size: 0.85rem; color: #008060; font-weight: bold; }
 .table-container { background: #ffffff; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); overflow: hidden; max-width: 1200px; margin: 0 auto; border: 1px solid #e1e3e5; }
 .product-table { width: 100%; border-collapse: collapse; text-align: left; }
-.product-table th {
-  background-color: #f9fafb;
-  color: #6d7175;
-  font-weight: 600;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e1e3e5;
-}
-.product-table td {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e1e3e5;
-  font-size: 0.9rem;
-  color: #202223 !important; /* Forces text to show up in Shopify charcoal grey instead of transparent/white */
-  background-color: #ffffff;
-}
+.product-table th { background-color: #f9fafb; color: #6d7175; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 1px solid #e1e3e5; }
+.product-table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e1e3e5; font-size: 0.9rem; color: #202223 !important; background-color: #ffffff; }
 .status-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500; }
 .status-synced { background-color: #e3f1df; color: #0b4b2c; }
 .status-pending { background-color: #fff4e5; color: #8a5a00; }
@@ -224,5 +240,16 @@ h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
 .modal-content { background: #ffffff; padding: 2rem; border-radius: 1rem; width: 440px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 .modal-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; }
 .modal-subtitle { color: #6d7175; font-size: 0.9rem; margin-bottom: 1.5rem; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 0.75}
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
+.empty-state { padding: 3rem; text-align: center; color: #6d7175; }
+
+/* NEW PAGINATION STYLES */
+.pagination-footer { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #ffffff; border-top: 1px solid #e1e3e5; flex-wrap: wrap; gap: 1rem; }
+.pagination-info { font-size: 0.875rem; color: #6d7175; }
+.pagination-info span { font-weight: 600; color: #202223; }
+.pagination-buttons { display: flex; gap: 0.25rem; }
+.pagination-link { display: inline-flex; align-items: center; justify-content: center; min-width: 2.25rem; height: 2.25rem; padding: 0 0.5rem; font-size: 0.875rem; border: 1px solid #babfc3; border-radius: 0.375rem; color: #202223; text-decoration: none; background: #ffffff; transition: all 0.2s; }
+.pagination-link:hover:not(.disabled):not(.active) { background: #f6f6f7; border-color: #8c9196; }
+.pagination-link.active { background: #008060; border-color: #008060; color: #ffffff; font-weight: 600; pointer-events: none; }
+.pagination-link.disabled { color: #babfc3; border-color: #e1e3e5; cursor: not-allowed; pointer-events: none; }
 </style>
