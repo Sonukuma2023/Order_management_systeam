@@ -75,31 +75,37 @@
         </div>
 
         <form @submit.prevent="submitImport" class="modal-form">
-          <div class="modal-body text-center">
-            <p class="modal-subtitle">Upload a CSV file to seamlessly import customers into your database.</p>
-            
-            <div class="upload-area" :class="{ 'dragging': isDragging }" 
-                 @dragover.prevent="isDragging = true" 
-                 @dragleave.prevent="isDragging = false"
-                 @drop.prevent="handleDrop">
-              
-              <div class="upload-icon-circle"><i class='bx bx-cloud-upload'></i></div>
-              <p v-if="!importForm.file">Drag & drop your CSV file here, or click to browse</p>
-              <p v-else class="file-name">{{ importForm.file.name }}</p>
-              
-              <input type="file" @change="handleFileSelect" accept=".csv" ref="fileInput" hidden>
-              <button type="button" @click="$refs.fileInput.click()" class="btn-secondary mt-10">Select File</button>
-            </div>
-            <span v-if="importForm.errors.file" class="err-msg mt-10">{{ importForm.errors.file }}</span>
-          </div>
+  <div class="modal-body text-center">
+    <p class="modal-subtitle">Upload a CSV file to seamlessly import customers into your database.</p>
+    
+    <div class="upload-area" :class="{ 'dragging': isDragging }" 
+         @dragover.prevent="isDragging = true" 
+         @dragleave.prevent="isDragging = false"
+         @drop.prevent="handleDrop">
+      
+      <div class="upload-icon-circle"><i class='bx bx-cloud-upload'></i></div>
+      <p v-if="!importForm.file">Drag & drop your CSV file here, or click to browse</p>
+      <p v-else class="file-name">{{ importForm.file.name }}</p>
+      
+      <input type="file" @change="handleFileSelect" accept=".csv" ref="fileInput" hidden>
+      <button type="button" @click="$refs.fileInput.click()" class="btn-secondary mt-10">Select File</button>
+    </div>
+    <span v-if="importForm.errors.file" class="err-msg mt-10">{{ importForm.errors.file }}</span>
+  </div>
 
-          <div class="modal-actions">
-            <button type="button" @click="closeImportModal" class="btn-secondary">Cancel</button>
-            <button type="submit" class="btn-primary" :disabled="importForm.processing || !importForm.file">
-              {{ importForm.processing ? 'Importing...' : 'Start Import' }}
-            </button>
-          </div>
-        </form>
+  <div class="modal-actions-wrapper">
+    <button type="button" @click="downloadDemoCSV" class="btn-demo-link">
+      download sample csv
+    </button>
+
+    <div class="modal-buttons-right">
+      <button type="button" @click="closeImportModal" class="btn-secondary">Cancel</button>
+      <button type="submit" class="btn-primary" :disabled="importForm.processing || !importForm.file">
+        {{ importForm.processing ? 'Importing...' : 'Start Import' }}
+      </button>
+    </div>
+  </div>
+</form>
       </div>
     </div>
 
@@ -155,6 +161,10 @@ import { Link, useForm, usePage } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
 const page = usePage();
+
+// ==========================================
+// 1. Profile Editing Module States & Logic
+// ==========================================
 const showProfileModal = ref(false);
 
 const profileForm = useForm({
@@ -193,8 +203,12 @@ const updateProfile = () => {
   });
 };
 
+// ==========================================
+// 2. CSV Import Module States & Logic
+// ==========================================
 const showImportModal = ref(false);
 const isDragging = ref(false);
+const fileInput = ref(null); // Reference to trigger the hidden file input element
 
 const importForm = useForm({
   file: null,
@@ -211,34 +225,67 @@ const closeImportModal = () => {
 };
 
 const handleFileSelect = (e) => {
-  importForm.file = e.target.files[0];
+  if (e.target.files && e.target.files.length > 0) {
+    importForm.file = e.target.files[0];
+    importForm.clearErrors('file');
+  }
 };
 
+// Completed Drag and Drop tracking logic
 const handleDrop = (e) => {
   isDragging.value = false;
-  importForm.file = e.dataTransfer.files[0];
+  
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const droppedFile = e.dataTransfer.files[0];
+    
+    // Validate that the dropped file is actually a CSV
+    if (droppedFile.type === 'text/csv' || droppedFile.name.endsWith('.csv')) {
+      importForm.file = droppedFile;
+      importForm.clearErrors('file');
+    } else {
+      importForm.setError('file', 'Please drop a valid CSV file format.');
+    }
+  }
 };
 
-const submitImport = () => {
-  if (!importForm.file) {
-    return;
-  }
+// Generates and downloads the dynamic format template directly using your required keys
+const downloadDemoCSV = () => {
+  const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Accepts', 'Marketing', 'Tags'];
+  const sampleRow = ['Laravel', 'developer', 'test1@gmail.com ', '4525252552', '', '', ''];
+  
+  const csvContent = [headers.join(','), sampleRow.join(',')].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'sample_import_format.csv');
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
-  importForm.post('/client-import', {
+// Handles file uploads via Inertia form instances
+const submitImport = () => {
+  if (!importForm.file) return;
+
+  importForm.post('/vendor/products/import', { // Change this string endpoint path if your router endpoint differs
     preserveScroll: true,
     onSuccess: () => {
       closeImportModal();
       Swal.fire({
-        toast: true,
-        position: 'top-end',
+        title: 'Imported Successfully!',
+        text: 'Your products have been processed and uploaded successfully.',
         icon: 'success',
-        title: 'Import Complete!',
-        showConfirmButton: false,
-        timer: 3000,
-        background: '#18181b',
-        color: '#fff'
+        confirmButtonColor: '#008060'
       });
     },
+    onError: (errors) => {
+      console.error('File parsing errors encountered:', errors);
+    }
   });
 };
 </script>
@@ -696,5 +743,41 @@ const submitImport = () => {
     padding: 4px 12px;
     border-radius: 100px;
     font-size: 13px;
+}
+/* Split layout: download button on left, action buttons on right */
+.modal-actions-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 0 1rem; /* Adjust padding matching your frame bounds */
+}
+
+.modal-buttons-right {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Red outline sample button styling */
+.btn-demo-link {
+  background: none;
+  border: 1px solid #ff0000;
+  color: #ff0000;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  text-transform: lowercase;
+}
+
+.btn-demo-link:hover {
+  background-color: rgba(255, 0, 0, 0.05);
+}
+
+.mt-10 {
+  margin-top: 10px;
 }
 </style>
