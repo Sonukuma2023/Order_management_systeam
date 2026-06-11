@@ -66,36 +66,69 @@
 
       <div v-if="isModalOpen" class="modal-overlay">
         <div class="modal-content">
+          
+          <button type="button" @click="isModalOpen = false" class="modal-close-btn" aria-label="Close modal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+
           <h3>Import Products CSV/Excel</h3>
           <p class="modal-subtitle">Select a file containing your product records.</p>
           
           <form @submit.prevent="handleFileUpload">
             <div class="file-upload-wrapper">
               <div class="upload-icon-container">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
               </div>
-              <p class="upload-text"><strong>Click to select</strong> or drag file here</p>
-              <p class="file-name-hint" v-if="form.file">{{ form.file.name }}</p>
-              
-              <input 
-                type="file" 
-                accept=".csv" 
+
+              <p class="upload-text">
+                <strong>Click to select</strong> or drag file here
+              </p>
+
+              <p class="file-name-hint" v-if="form.file">
+                {{ form.file.name }}
+              </p>
+
+              <input
+                type="file"
+                accept=".csv"
                 @input="onFileSelected"
-                required 
+                required
               />
             </div>
 
-            <div class="modal-actions">
-              <button type="button" @click="isModalOpen = false" class="btn btn-link">
-                Cancel
+            <div class="modal-actions-wrapper">
+              <button type="button" @click="downloadDemoCSV" class="btn-demo-link">
+                download sample csv
               </button>
-              <button type="submit" :disabled="form.processing" class="btn btn-primary">
-                {{ form.processing ? 'Uploading...' : 'Submit & Import' }}
-              </button>
+
+              <div class="modal-buttons-right">
+                <button type="button" @click="isModalOpen = false" class="btn btn-link">
+                  Cancel
+                </button>
+                <button type="submit" :disabled="form.processing" class="btn btn-primary">
+                  {{ form.processing ? 'Uploading...' : 'Submit & Import' }}
+                </button>
+              </div>
             </div>
           </form>
         </div>
       </div>
+
     </VendorLayout>
   </div>
 </template>
@@ -108,7 +141,6 @@ import VendorLayout from '../VendorLayout.vue';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
-  // Accept either a direct array or a paginated object payload from Laravel/Inertia
   initialProducts: {
     type: [Array, Object],
     default: () => []
@@ -118,7 +150,6 @@ const props = defineProps({
 const isModalOpen = ref(false);
 const page = usePage();
 
-// Safely unpack reactive list array based on backend structure variations
 const getProductsArray = (data) => {
   if (!data) return [];
   return Array.isArray(data) ? data : (data.data || []);
@@ -126,7 +157,6 @@ const getProductsArray = (data) => {
 
 const products = ref(getProductsArray(props.initialProducts));
 
-// Extract pagination metadata setups dynamically
 const paginationLinks = computed(() => props.initialProducts?.links || page.props.initialProducts?.links || null);
 const paginationMeta = computed(() => {
   const source = props.initialProducts || page.props.initialProducts;
@@ -138,7 +168,6 @@ const paginationMeta = computed(() => {
   };
 });
 
-// Watch for changes coming from Inertia server partial updates
 watch(
   () => page.props.initialProducts,
   (newProducts) => {
@@ -155,6 +184,26 @@ const form = useForm({
 
 const onFileSelected = (event) => {
   form.file = event.target.files[0];
+};
+
+// Generates dynamic CSV template targeting required spreadsheet formats
+const downloadDemoCSV = () => {
+  const headers = ['sku_code', 'name', 'image', 'category', 'price', 'description', 'quantity', 'status'];
+  const sampleRow = ['PRD001', 'Sample Product', 'https://example.com/image.jpg', 'Electronics', '99.99', 'Product Description', '10', 'active'];
+  
+  const csvContent = [headers.join(','), sampleRow.join(',')].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'sample_products.csv');
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 const handleFileUpload = () => {
@@ -181,7 +230,6 @@ const handleFileUpload = () => {
 
 const moveToShopify = async (product) => {
   product.isSyncing = true;
-
   try {
     const { data } = await axios.post(
       `/vendor/products/${product.id}/sync-shopify`
@@ -220,9 +268,9 @@ h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
 .btn-primary:hover:not(:disabled) { background-color: #006e52; }
 .btn-secondary { background-color: #ffffff; border-color: #babfc3; color: #202223; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05); }
 .btn-secondary:hover:not(:disabled) { background-color: #f6f6f7; border-color: #8c9196; }
-.btn-link { background: transparent; color: #6d7175; }
+.btn-link { background: transparent; color: #6d7175; text-decoration: none; border: none; cursor: pointer; font-size: 0.875rem; }
 .btn-link:hover:not(:disabled) { color: #202223; text-decoration: underline; }
-.file-upload-wrapper { margin: 1.5rem 0; position: relative; border: 2px dashed #b4ccd2; background-color: #f9fafb; border-radius: 0.75rem; padding: 2rem 1.5rem; text-align: center; cursor: pointer; }
+.file-upload-wrapper { margin: 1.5rem 0; position: relative; border: 2px dashed #b4ccd2; background-color: #f9fafb; border-radius: 0.75rem; padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; }
 .file-upload-wrapper:hover { border-color: #008060; background-color: #f1f8f5; }
 .file-upload-wrapper input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .upload-icon-container { color: #6d7175; margin-bottom: 0.75rem; }
@@ -236,14 +284,27 @@ h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
 .status-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500; }
 .status-synced { background-color: #e3f1df; color: #0b4b2c; }
 .status-pending { background-color: #fff4e5; color: #8a5a00; }
-.modal-overlay { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(32, 34, 35, 0.6); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; }
-.modal-content { background: #ffffff; padding: 2rem; border-radius: 1rem; width: 440px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-.modal-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; }
-.modal-subtitle { color: #6d7175; font-size: 0.9rem; margin-bottom: 1.5rem; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
 .empty-state { padding: 3rem; text-align: center; color: #6d7175; }
 
-/* NEW PAGINATION STYLES */
+/* Modal Architecture Styles */
+.modal-overlay { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(32, 34, 35, 0.6); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; }
+.modal-content { position: relative; background: #ffffff; padding: 2.5rem 2rem 2rem 2rem; border-radius: 1rem; width: 520px; max-width: 90vw; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+.modal-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; color: #202223; }
+.modal-subtitle { color: #6d7175; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+/* Absolute Top Right "X" Button Positioning Layout */
+.modal-close-btn { position: absolute; top: 1.25rem; right: 1.25rem; background: transparent; border: none; color: #6d7175; cursor: pointer; padding: 4px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.modal-close-btn:hover { background-color: #f6f6f7; color: #202223; }
+
+/* Bottom Modal Action Layout Placements */
+.modal-actions-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+.modal-buttons-right { display: flex; gap: 0.75rem; align-items: center; }
+
+/* Left-Aligned Red Border Box Link */
+.btn-demo-link { background: none; border: 1px solid #ff0000; color: #ff0000; padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.85rem; border-radius: 4px; font-weight: 500; transition: background-color 0.2s; text-transform: lowercase; }
+.btn-demo-link:hover { background-color: rgba(255, 0, 0, 0.05); }
+
+/* Pagination Styling Rules */
 .pagination-footer { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #ffffff; border-top: 1px solid #e1e3e5; flex-wrap: wrap; gap: 1rem; }
 .pagination-info { font-size: 0.875rem; color: #6d7175; }
 .pagination-info span { font-weight: 600; color: #202223; }

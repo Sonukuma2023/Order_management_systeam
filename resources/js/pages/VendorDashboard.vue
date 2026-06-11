@@ -189,7 +189,7 @@ const applyFilter = () => {
         <div class="dashboard-header">
             <div>
                 <h1 class="page-title">Overview</h1>
-                <p class="page-subtitle">Welcome back. Here's what's happening with your store today.</p>
+                <p class="page-subtitle"></p>
             </div>
 
             <div class="filter-section">
