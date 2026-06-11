@@ -26,14 +26,13 @@ const props = defineProps({
 });
 
 // --- Fallback Static Data Constants ---
-const STATIC_BAR_LABELS = ['Jan Orders', 'Feb Orders', 'Mar Orders', 'Apr Orders', 'May Orders'];
+const STATIC_BAR_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
 const STATIC_BAR_VALUES = [0, 0, 0, 0, 0];
 
 const STATIC_PIE_LABELS = ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'];
 const STATIC_PIE_VALUES = [0, 0, 0, 0, 0];
 
-
-// 1. Data configuration for the Bar Chart (Dynamic vs Static Fallback)
+// 1. Data configuration for the Bar Chart
 const barChartData = computed(() => {
     const grouped = {};
     
@@ -52,54 +51,63 @@ const barChartData = computed(() => {
             labels: sortedData.map(entry => entry[0]),
             datasets: [{
                 label: 'Sales (₹)',
-                backgroundColor: '#ff2770',
-                borderColor: '#ff2770',
-                borderWidth: 1,
+                backgroundColor: '#3b82f6', // Electric Blue
+                borderRadius: 4,
+                borderWidth: 0,
                 data: sortedData.map(entry => entry[1])
             }]
         };
     }
 
-    // FALLBACK: Return Static Data if no data from DB
+    // FALLBACK
     return {
         labels: STATIC_BAR_LABELS,
         datasets: [{
             label: 'Sales (₹) [Demo]',
-            backgroundColor: 'rgba(255, 39, 112, 0.4)', // Faded variant for elegant empty state
-            borderColor: '#ff2770',
-            borderWidth: 1,
+            backgroundColor: 'rgba(59, 130, 246, 0.2)', // Faded Blue
+            borderRadius: 4,
+            borderWidth: 0,
             data: STATIC_BAR_VALUES
         }]
     };
 });
 
-// Bar Chart Options (Configured for Dark Mode visibility)
+// Bar Chart Options
 const barChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
         legend: {
-            labels: { color: '#aaa' }
+            display: false,
+        },
+        tooltip: {
+            backgroundColor: '#18181b',
+            titleColor: '#fff',
+            bodyColor: '#a1a1aa',
+            borderColor: '#27272a',
+            borderWidth: 1,
+            padding: 10,
+            displayColors: false,
         }
     },
     scales: {
         x: {
-            grid: { color: '#333' },
-            ticks: { color: '#aaa' }
+            grid: { display: false },
+            ticks: { color: '#71717a', font: { family: 'Inter', size: 12 } }
         },
         y: {
             beginAtZero: true,
-            grid: { color: '#333' },
-            ticks: { color: '#aaa' }
+            border: { display: false },
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#71717a', font: { family: 'Inter', size: 12 }, padding: 10 }
         }
     }
 }
 
-// 2. Data configuration for the Pie Chart (Dynamic vs Static Fallback)
+// 2. Data configuration for the Pie Chart
 const pieChartData = computed(() => {
     const productSales = {};
 
-    // Check if dynamic data exists from database
     if (props.result && props.result.length > 0) {
         props.result.forEach(item => {
             const productName = item.title || 'Unknown Product'; 
@@ -109,7 +117,6 @@ const pieChartData = computed(() => {
             productSales[productName] += item.price;
         });
 
-        // Convert to array, sort by price descending, and take top 5
         const sortedProducts = Object.entries(productSales)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
@@ -118,20 +125,22 @@ const pieChartData = computed(() => {
             labels: sortedProducts.map(p => p[0]), 
             datasets: [{
                 label: 'Total Revenue',
-                backgroundColor: ['#ff2770', '#00f2ff', '#7000ff', '#ff8700', '#00ff87'],
-                borderWidth: 0,
+                backgroundColor: ['#3b82f6', '#8b5cf6', '#06b6d4', '#6366f1', '#a855f7'],
+                borderColor: '#18181b',
+                borderWidth: 2,
                 data: sortedProducts.map(p => p[1]) 
             }]
         };
     }
 
-    // FALLBACK: Return Static Data if no data from DB
+    // FALLBACK
     return {
         labels: STATIC_PIE_LABELS, 
         datasets: [{
             label: 'Total Revenue [Demo]',
-            backgroundColor: ['rgba(255, 39, 112, 0.5)', 'rgba(0, 242, 255, 0.5)', 'rgba(112, 0, 255, 0.5)', 'rgba(255, 135, 0, 0.5)', 'rgba(0, 255, 135, 0.5)'],
-            borderWidth: 0,
+            backgroundColor: ['rgba(59,130,246,0.2)', 'rgba(139,92,246,0.2)', 'rgba(6,182,212,0.2)', 'rgba(99,102,241,0.2)', 'rgba(168,85,247,0.2)'],
+            borderColor: '#18181b',
+            borderWidth: 2,
             data: STATIC_PIE_VALUES 
         }]
     };
@@ -143,7 +152,15 @@ const pieChartOptions = {
     plugins: {
         legend: {
             position: 'right',
-            labels: { color: '#aaa', font: { size: 12 } }
+            labels: { color: '#a1a1aa', font: { family: 'Inter', size: 12 }, padding: 20, usePointStyle: true }
+        },
+        tooltip: {
+            backgroundColor: '#18181b',
+            titleColor: '#fff',
+            bodyColor: '#a1a1aa',
+            borderColor: '#27272a',
+            borderWidth: 1,
+            padding: 10,
         }
     }
 }
@@ -170,51 +187,67 @@ const applyFilter = () => {
 
     <VendorLayout>
         <div class="dashboard-header">
-            
-            <h1> Vendor Dashboard </h1>
+            <div>
+                <h1 class="page-title">Overview</h1>
+                <p class="page-subtitle">Welcome back. Here's what's happening with your store today.</p>
+            </div>
 
             <div class="filter-section">
                 <div class="date-group">
-                    <label>From</label>
-                    <input type="date" v-model="filters.start_date" class="date-input">
+                    <input type="date" v-model="filters.start_date" class="date-input" aria-label="Start Date">
                 </div>
+                <span class="to-divider">→</span>
                 <div class="date-group">
-                    <label>To</label>
-                    <input type="date" v-model="filters.end_date" class="date-input">
+                    <input type="date" v-model="filters.end_date" class="date-input" aria-label="End Date">
                 </div>
                 <button @click="applyFilter" class="filter-btn">
-                    <i class='bx bx-filter-alt'></i> Filter
+                    Filter
                 </button>
             </div>
         </div>
 
         <div class="stats-grid">
-            <div class="card">
-                <h3>Total Sales</h3>
-                <p>₹{{ total_sales || 0 }}</p>
+            <div class="stat-card">
+                <div class="stat-icon bg-blue-glow"><i class='bx bx-wallet'></i></div>
+                <div class="stat-info">
+                    <h3>Total Sales</h3>
+                    <p class="stat-value">₹{{ total_sales || 0 }}</p>
+                </div>
             </div>
 
-            <div class="card">
-                <h3>Products</h3>
-                <p>{{ product_count || 0 }}</p>
+            <div class="stat-card">
+                <div class="stat-icon bg-purple-glow"><i class='bx bx-box'></i></div>
+                <div class="stat-info">
+                    <h3>Products</h3>
+                    <p class="stat-value">{{ product_count || 0 }}</p>
+                </div>
             </div>
 
-            <div class="card">
-                <h3>Total Orders</h3>
-                <p>{{ order_count || 0 }}</p>
+            <div class="stat-card">
+                <div class="stat-icon bg-cyan-glow"><i class='bx bx-cart'></i></div>
+                <div class="stat-info">
+                    <h3>Total Orders</h3>
+                    <p class="stat-value">{{ order_count || 0 }}</p>
+                </div>
             </div>
         </div>
 
         <div class="charts-grid">
             <div class="chart-card">
-                <h3>Sales Analysis (Histogram/Bar)</h3>
+                <div class="chart-header">
+                    <h3>Sales Revenue</h3>
+                    <p>Overview of your gross sales</p>
+                </div>
                 <div class="chart-container">
                     <Bar :data="barChartData" :options="barChartOptions" />
                 </div>
             </div>
 
             <div class="chart-card">
-                <h3>Top Products </h3>
+                <div class="chart-header">
+                    <h3>Top Performing Products</h3>
+                    <p>Revenue distribution</p>
+                </div>
                 <div class="chart-container">
                     <Pie :data="pieChartData" :options="pieChartOptions" />
                 </div>
@@ -227,124 +260,174 @@ const applyFilter = () => {
 .dashboard-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
+    align-items: flex-end;
+    margin-bottom: 40px;
     flex-wrap: wrap;
     gap: 20px;
 }
 
-.dashboard-header h1 {
-    color: white;
+.page-title {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+    color: #a1a1aa;
+    font-size: 14px;
     margin: 0;
 }
 
 .filter-section {
     display: flex;
-    gap: 15px;
-    background: #1a1a1e;
-    padding: 10px 15px;
-    border-radius: 10px;
-    border: 1px solid #333;
-    align-items: flex-end;
+    align-items: center;
+    gap: 12px;
 }
 
-.date-group { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 5px; 
-}
-
-.date-group label { 
-    font-size: 11px; 
-    color: #ff2770; 
-    text-transform: uppercase; 
-    font-weight: bold; 
+.to-divider {
+    color: #71717a;
+    font-size: 14px;
 }
 
 .date-input {
-    background: #25252b; 
-    border: 1px solid #444;
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 6px;
+    background: #18181b; 
+    border: 1px solid #27272a;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 8px;
     outline: none;
     font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    color-scheme: dark;
+    transition: all 0.2s;
 }
 
 .date-input:focus { 
-    border-color: #ff2770; 
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .filter-btn {
-    background: #ff2770;
-    color: white;
+    background: #ffffff;
+    color: #000000;
     border: none;
-    padding: 8px 18px;
-    border-radius: 6px;
+    padding: 10px 20px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
-    transition: 0.3s;
+    font-size: 13px;
+    transition: all 0.2s;
 }
 
 .filter-btn:hover { 
-    box-shadow: 0 0 15px rgba(255, 39, 112, 0.4); 
+    background: #f4f4f5;
+    transform: translateY(-1px);
 }
 
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: #0f0f11;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
     gap: 20px;
-    margin-bottom: 30px;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.card {
-    background: #1a1a1e;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #333;
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
-.card h3 {
-    color: #aaa;
-    margin-bottom: 10px;
-}
-
-.card p {
-    color: #ff2770;
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 24px;
-    font-weight: bold;
+}
+
+.bg-blue-glow { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+.bg-purple-glow { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.2); }
+.bg-cyan-glow { background: rgba(6, 182, 212, 0.1); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.2); }
+
+.stat-info h3 {
+    color: #a1a1aa;
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.1;
+    letter-spacing: -1px;
 }
 
 .charts-grid {
     display: grid;
     grid-template-columns: 2fr 1fr; 
-    gap: 20px;
+    gap: 24px;
 }
 
 .chart-card {
-    background: #1a1a1e;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #333;
+    background: #0f0f11;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.chart-card h3 {
-    color: #fff;
-    font-size: 1rem;
-    margin-bottom: 20px;
-    font-weight: 500;
+.chart-header {
+    margin-bottom: 24px;
+}
+
+.chart-header h3 {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.chart-header p {
+    color: #71717a;
+    font-size: 13px;
+    margin: 0;
 }
 
 .chart-container {
     position: relative;
-    height: 300px; 
+    height: 320px; 
     width: 100%;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
     .charts-grid {
         grid-template-columns: 1fr;
     }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -354,7 +437,7 @@ const applyFilter = () => {
     }
     .filter-section {
         width: 100%;
-        box-sizing: border-box;
+        flex-wrap: wrap;
     }
 }
 </style>

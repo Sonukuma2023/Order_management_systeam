@@ -1,55 +1,72 @@
 <template>
   <AuthenticatedLayout>
-    <div class="welcome-banner">
-      <div class="header-text">
-        <h1>Admin Dashboard</h1>
+    <div class="dashboard-header">
+      <div>
+        <h1 class="page-title">Admin Overview</h1>
+        <p class="page-subtitle">Welcome back. Here's what's happening across the entire platform.</p>
       </div>
 
       <div class="filter-section">
         <div class="date-group">
-          <label>From</label>
-          <input type="date" v-model="filters.start_date" class="date-input">
+          <input type="date" v-model="filters.start_date" class="date-input" aria-label="Start Date">
         </div>
+        <span class="to-divider">→</span>
         <div class="date-group">
-          <label>To</label>
-          <input type="date" v-model="filters.end_date" class="date-input">
+          <input type="date" v-model="filters.end_date" class="date-input" aria-label="End Date">
         </div>
         <button @click="applyFilter" class="filter-btn">
-          <i class='bx bx-filter-alt'></i> Filter
+          Filter
         </button>
       </div>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
-        <h3>Total Sales</h3>
-        <p class="value">₹{{ totalsale ? totalsale.toLocaleString() : '0.00' }}</p>
-        <span class="trend">+12.5%</span>
+        <div class="stat-icon bg-blue-glow"><i class='bx bx-line-chart'></i></div>
+        <div class="stat-info">
+          <h3>Total Sales</h3>
+          <p class="stat-value">₹{{ totalsale ? totalsale.toLocaleString() : '0.00' }}</p>
+          <span class="trend">+12.5%</span>
+        </div>
       </div>
+      
       <div class="stat-card">
-        <h3>Active Products</h3>
-        <p class="value">{{ product_active_count || 0 }}</p>
-        <span class="trend">+15.5%</span>
+        <div class="stat-icon bg-purple-glow"><i class='bx bx-cube-alt'></i></div>
+        <div class="stat-info">
+          <h3>Active Products</h3>
+          <p class="stat-value">{{ product_active_count || 0 }}</p>
+          <span class="trend">+15.5%</span>
+        </div>
       </div>
+      
       <div class="stat-card">
-        <h3>Total Customers</h3>
-        <p class="value">{{ user_count || 0 }}</p>
-        <span class="trend">+5.2%</span>
+        <div class="stat-icon bg-cyan-glow"><i class='bx bx-user'></i></div>
+        <div class="stat-info">
+          <h3>Total Customers</h3>
+          <p class="stat-value">{{ user_count || 0 }}</p>
+          <span class="trend">+5.2%</span>
+        </div>
       </div>
     </div>
 
-    <div class="charts-section">
-      <div class="chart-container">
-        <h3>Sales (Histogram)</h3>
-        <div class="chart-wrapper">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Sales Revenue</h3>
+          <p>Global platform sales overview</p>
+        </div>
+        <div class="chart-container">
           <Bar :data="barData" :options="chartOptions" />
         </div>
       </div>
 
-      <div class="chart-container">
-        <h3>Highest Ordered Product</h3>
-        <div class="chart-wrapper">
-          <Pie :data="pieData" :options="chartOptions" />
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Top Performing Products</h3>
+          <p>Highest ordered items globally</p>
+        </div>
+        <div class="chart-container">
+          <Pie :data="pieData" :options="pieOptions" />
         </div>
       </div>
     </div>
@@ -77,17 +94,16 @@
         
         <div class="chat-messages" ref="messageBox">
           <div v-for="(msg, index) in messages" :key="index" :class="['msg-row', msg.sender]">
-            <div class="msg-bubble" style="position: relative; padding-right: 55px;">
-              
+            <div class="msg-bubble" style="position: relative;">
               <p>{{ msg.text }}</p>
               
               <button 
                 v-if="msg.sender === 'bot'"
                 type="button"
                 @click="copyAction(msg, index)" 
-                style="position: absolute; right: 8px; top: 8px; background: #374151; color: #ef4444; border: none; padding: 2px 6px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; z-index: 10;"
+                class="copy-btn"
               >
-                {{ activeCopiedIndex === index ? 'Copied!' : 'copy' }}
+                {{ activeCopiedIndex === index ? 'Copied!' : 'Copy' }}
               </button>
 
               <span class="msg-time">{{ msg.time }}</span>
@@ -142,7 +158,7 @@ const props = defineProps({
 });
 
 // --- Fallback Static Data Constants ---
-const STATIC_BAR_LABELS = ['Jan Orders', 'Feb Orders', 'Mar Orders', 'Apr Orders', 'May Orders'];
+const STATIC_BAR_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
 const STATIC_BAR_VALUES = [ 0, 0, 0, 0, 0];
 
 const STATIC_PIE_LABELS = ['Product Alpha', 'Product Beta', 'Product Gamma', 'Product Delta', 'Product Epsilon'];
@@ -170,21 +186,50 @@ const chartOptions = {
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      labels: { color: '#aaa' }
+      display: false,
+    },
+    tooltip: {
+      backgroundColor: '#18181b',
+      titleColor: '#fff',
+      bodyColor: '#a1a1aa',
+      borderColor: '#27272a',
+      borderWidth: 1,
+      padding: 10,
+      displayColors: false,
     }
   },
   scales: {
     x: {
-      grid: { color: '#333' },
-      ticks: { color: '#aaa' }
+      grid: { display: false },
+      ticks: { color: '#71717a', font: { family: 'Inter', size: 12 } }
     },
     y: {
       beginAtZero: true,
-      grid: { color: '#333' },
-      ticks: { color: '#aaa' }
+      border: { display: false },
+      grid: { color: 'rgba(255,255,255,0.05)' },
+      ticks: { color: '#71717a', font: { family: 'Inter', size: 12 }, padding: 10 }
     }
   }
 };
+
+const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'right',
+            labels: { color: '#a1a1aa', font: { family: 'Inter', size: 12 }, padding: 20, usePointStyle: true }
+        },
+        tooltip: {
+            backgroundColor: '#18181b',
+            titleColor: '#fff',
+            bodyColor: '#a1a1aa',
+            borderColor: '#27272a',
+            borderWidth: 1,
+            padding: 10,
+        }
+    }
+}
 
 // --- 3. Chart Data Processing ---
 const barData = computed(() => {
@@ -200,7 +245,9 @@ const barData = computed(() => {
             labels: Object.keys(grouped),
             datasets: [{
                 label: 'Sales (₹)',
-                backgroundColor: '#ff2770',
+                backgroundColor: '#3b82f6',
+                borderRadius: 4,
+                borderWidth: 0,
                 data: Object.values(grouped)
             }]
         };
@@ -209,9 +256,9 @@ const barData = computed(() => {
         labels: STATIC_BAR_LABELS,
         datasets: [{
             label: 'Sales (₹) [Demo]',
-            backgroundColor: 'rgba(255, 39, 112, 0.4)',
-            borderColor: '#ff2770',
-            borderWidth: 1,
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderRadius: 4,
+            borderWidth: 0,
             data: STATIC_BAR_VALUES
         }]
     };
@@ -230,14 +277,15 @@ const pieData = computed(() => {
 
         const sortedProducts = Object.entries(productSales)
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 6);
+            .slice(0, 5);
 
         return {
             labels: sortedProducts.map(p => p[0]), 
             datasets: [{
                 label: 'Total Revenue',
-                backgroundColor: ['#ff2770', '#00f2ff', '#7000ff', '#ff8700', '#00ff87'],
-                borderWidth: 1,
+                backgroundColor: ['#3b82f6', '#8b5cf6', '#06b6d4', '#6366f1', '#a855f7'],
+                borderColor: '#18181b',
+                borderWidth: 2,
                 data: sortedProducts.map(p => p[1]) 
             }]
         };
@@ -246,8 +294,9 @@ const pieData = computed(() => {
         labels: STATIC_PIE_LABELS,
         datasets: [{
             label: 'Total Revenue [Demo]',
-            backgroundColor: ['rgba(255, 39, 112, 0.5)', 'rgba(0, 242, 255, 0.5)', 'rgba(112, 0, 255, 0.5)', 'rgba(255, 135, 0, 0.5)', 'rgba(0, 255, 135, 0.5)'],
-            borderWidth: 0,
+            backgroundColor: ['rgba(59,130,246,0.2)', 'rgba(139,92,246,0.2)', 'rgba(6,182,212,0.2)', 'rgba(99,102,241,0.2)', 'rgba(168,85,247,0.2)'],
+            borderColor: '#18181b',
+            borderWidth: 2,
             data: STATIC_PIE_VALUES
         }]
     };
@@ -260,7 +309,6 @@ const unreadCount = ref(1);
 const newMessage = ref('');
 const messageBox = ref(null);
 
-// New Reactive Track variable to hold the currently copied element index value
 const activeCopiedIndex = ref(null);
 
 const messages = ref([
@@ -271,7 +319,6 @@ function getFormattedTime() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// FIXED JAVASCRIPT ACTION LOGIC BLOCK
 const copyAction = (msg, index) => {
   if (navigator && navigator.clipboard) {
     navigator.clipboard.writeText(msg.text)
@@ -361,91 +408,200 @@ watch(isChatOpen, (val) => {
 </script>
 
 <style scoped>
-/* Welcome Banner Layout */
-.welcome-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
-.header-text h1 { font-size: 28px; color: #fff; margin: 0; }
-.header-text p { color: #a0aec0; margin: 0; }
+.page-title {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+}
 
-/* Filter Section Styles */
+.page-subtitle {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin: 0;
+}
+
 .filter-section {
-  display: flex;
-  gap: 15px;
-  background: #25252b;
-  padding: 12px 20px;
-  border-radius: 12px;
-  border: 1px solid #333;
-  align-items: flex-end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.date-group { display: flex; flex-direction: column; gap: 5px; }
-.date-group label { font-size: 11px; color: #ff2770; text-transform: uppercase; font-weight: bold; }
+.to-divider {
+    color: #71717a;
+    font-size: 14px;
+}
 
 .date-input {
-  background: #1a1a1e;
-  border: 1px solid #444;
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 6px;
-  outline: none;
-  font-size: 13px;
+    background: #18181b; 
+    border: 1px solid #27272a;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    outline: none;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    color-scheme: dark;
+    transition: all 0.2s;
 }
-.date-input:focus { border-color: #ff2770; }
+
+.date-input:focus { 
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
 
 .filter-btn {
-  background: #ff2770;
-  color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.3s;
-}
-.filter-btn:hover { box-shadow: 0 0 15px rgba(255, 39, 112, 0.4); }
-
-/* Grid & Card Styles */
-.stats-grid { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-  gap: 20px; 
-  margin-bottom: 30px; 
-}
-.stat-card { 
-  background: #25252b; 
-  padding: 25px; 
-  border-radius: 15px; 
-  border: 1px solid #333; 
-  transition: 0.3s; 
-}
-.stat-card:hover { border-color: #ff2770; transform: translateY(-5px); }
-.stat-card h3 { font-size: 14px; color: #a0aec0; margin-bottom: 10px; }
-.stat-card .value { font-size: 24px; font-weight: 700; color: #fff; }
-.trend { color: #00f2ff; font-size: 12px; }
-
-/* Charts */
-.charts-section { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-.chart-container { background: #25252b; padding: 20px; border-radius: 15px; border: 1px solid #333; }
-.chart-container h3 { 
-  font-size: 16px; 
-  color: #fff; 
-  margin-bottom: 20px; 
-  border-left: 4px solid #ff2770; 
-  padding-left: 10px; 
-}
-.chart-wrapper {  height: 300px; width: 100%; }
-
-@media (max-width: 992px) {
-  .welcome-banner { flex-direction: column; align-items: flex-start; gap: 20px; }
-  .charts-section { grid-template-columns: 1fr; }
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s;
 }
 
-/* --- Floating Widget Base Positioning --- */
+.filter-btn:hover { 
+    background: #f4f4f5;
+    transform: translateY(-1px);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: #0f0f11;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.bg-blue-glow { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+.bg-purple-glow { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.2); }
+.bg-cyan-glow { background: rgba(6, 182, 212, 0.1); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.2); }
+
+.stat-info h3 {
+    color: #a1a1aa;
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.1;
+    letter-spacing: -1px;
+}
+.trend { 
+    color: #10b981; 
+    font-size: 12px; 
+    font-weight: 500; 
+    margin-left: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; 
+    gap: 24px;
+}
+
+.chart-card {
+    background: #0f0f11;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chart-header {
+    margin-bottom: 24px;
+}
+
+.chart-header h3 {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.chart-header p {
+    color: #71717a;
+    font-size: 13px;
+    margin: 0;
+}
+
+.chart-container {
+    position: relative;
+    height: 320px; 
+    width: 100%;
+}
+
+@media (max-width: 1024px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .filter-section {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
+/* --- Chatbot Styles Update --- */
 .chatbot-wrapper {
   position: fixed;
   bottom: 25px;
@@ -458,7 +614,7 @@ watch(isChatOpen, (val) => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #ff2770;
+  background: #3b82f6;
   border: none;
   color: white;
   font-size: 24px;
@@ -466,19 +622,18 @@ watch(isChatOpen, (val) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(255, 39, 112, 0.4);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  position: relative;
 }
 .chat-fab:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(255, 39, 112, 0.6);
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5);
 }
 
 .fab-active {
-  background: #25252b;
+  background: #18181b;
   border: 1px solid #333;
-  color: #ff2770;
+  color: #3b82f6;
   transform: rotate(90deg);
 }
 
@@ -486,8 +641,8 @@ watch(isChatOpen, (val) => {
   position: absolute;
   top: -2px;
   right: -2px;
-  background: #00f2ff;
-  color: #1a1a1e;
+  background: #ef4444;
+  color: #fff;
   font-size: 10px;
   font-weight: 800;
   width: 18px;
@@ -496,6 +651,7 @@ watch(isChatOpen, (val) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid #000;
 }
 
 /* --- Main Interface Panel Window --- */
@@ -503,13 +659,13 @@ watch(isChatOpen, (val) => {
   position: absolute;
   bottom: 75px;
   right: 0;
-  width: 360px;
-  max-height: 480px;
+  width: 380px;
+  max-height: 520px;
   height: calc(100vh - 120px);
-  background: #1a1a1e;
-  border: 1px solid #333;
+  background: #0f0f11;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -517,14 +673,14 @@ watch(isChatOpen, (val) => {
 }
 
 @keyframes slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .chat-header {
-  background: #25252b;
-  padding: 15px;
-  border-bottom: 1px solid #333;
+  background: #18181b;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -539,13 +695,13 @@ watch(isChatOpen, (val) => {
 .bot-avatar {
   width: 36px;
   height: 36px;
-  background: rgba(255, 39, 112, 0.1);
-  border: 1px solid #ff2770;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff2770;
+  color: #3b82f6;
   font-size: 20px;
   position: relative;
 }
@@ -553,101 +709,125 @@ watch(isChatOpen, (val) => {
 .status-indicator {
   position: absolute;
   bottom: 0;
-  right: 0;
-  width: 9px;
-  height: 9px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  border: 2px solid #25252b;
+  border: 2px solid #18181b;
 }
-.status-indicator.online { background: #00ff87; }
+.status-indicator.online { background: #10b981; }
 
 .bot-info h4 { color: #fff; margin: 0; font-size: 14px; font-weight: 600; }
-.bot-info p { color: #a0aec0; margin: 0; font-size: 11px; }
+.bot-info p { color: #10b981; margin: 0; font-size: 11px; }
 
 .close-chat-btn {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
   border: none;
-  color: #a0aec0;
+  color: #a1a1aa;
   font-size: 18px;
   cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
-.close-chat-btn:hover { color: #fff; }
+.close-chat-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
 .chat-messages {
   flex: 1;
-  padding: 15px;
+  padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
-.chat-messages::-webkit-scrollbar { width: 4px; }
-.chat-messages::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
 
 .msg-row { display: flex; width: 100%; }
 .msg-row.bot { justify-content: flex-start; }
 .msg-row.user { justify-content: flex-end; }
 
 .msg-bubble {
-  max-width: 80%;
-  padding: 10px 14px;
+  max-width: 85%;
+  padding: 12px 16px;
   border-radius: 12px;
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.5;
   position: relative;
 }
 
 .bot .msg-bubble {
-  background: #25252b;
-  color: #e2e8f0;
-  border-top-left-radius: 2px;
-  border: 1px solid #333;
+  background: #18181b;
+  color: #e4e4e7;
+  border-top-left-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding-right: 50px;
 }
 
 .user .msg-bubble {
-  background: #ff2770;
+  background: #3b82f6;
   color: white;
-  border-top-right-radius: 2px;
+  border-top-right-radius: 4px;
 }
 
 .msg-bubble p { margin: 0; word-break: break-word; }
+
+.copy-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: #27272a;
+  color: #a1a1aa;
+  border: 1px solid #3f3f46;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.copy-btn:hover { background: #3f3f46; color: #fff; }
+
 .msg-time {
   display: block;
-  font-size: 9px;
-  color: #718096;
-  margin-top: 4px;
+  font-size: 10px;
+  color: #71717a;
+  margin-top: 6px;
   text-align: right;
 }
-.user .msg-time { color: rgba(255,255,255,0.7); }
+.user .msg-time { color: rgba(255,255,255,0.8); }
 
 .chat-input-area {
-  padding: 12px;
-  background: #25252b;
-  border-top: 1px solid #333;
+  padding: 16px;
+  background: #18181b;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .chat-input {
   flex: 1;
-  background: #1a1a1e;
-  border: 1px solid #444;
+  background: #0f0f11;
+  border: 1px solid #27272a;
   color: white;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
   outline: none;
   font-size: 13px;
+  transition: border-color 0.2s;
 }
-.chat-input:focus { border-color: #ff2770; }
-.chat-input:disabled { background: #222; color: #777; cursor: not-allowed; }
+.chat-input:focus { border-color: #3b82f6; }
+.chat-input:disabled { background: #0f0f11; opacity: 0.5; cursor: not-allowed; }
 
 .chat-send-btn {
-  background: #ff2770;
+  background: #3b82f6;
   border: none;
   color: white;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -655,17 +835,17 @@ watch(isChatOpen, (val) => {
   transition: 0.2s;
 }
 .chat-send-btn:disabled {
-  background: #444;
-  color: #718096;
+  background: #27272a;
+  color: #71717a;
   cursor: not-allowed;
 }
 
-.typing-bubble { padding: 12px 16px !important; }
+.typing-bubble { padding: 16px !important; }
 .typing-dots { display: flex; gap: 4px; align-items: center; height: 10px; }
 .typing-dots span {
   width: 6px;
   height: 6px;
-  background: #ff2770;
+  background: #3b82f6;
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
 }
@@ -675,13 +855,5 @@ watch(isChatOpen, (val) => {
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1.0); }
-}
-
-@media (max-width: 480px) {
-  .chat-window {
-    width: calc(100vw - 30px);
-    right: -10px;
-    bottom: 70px;
-  }
 }
 </style>
