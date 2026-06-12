@@ -3,7 +3,7 @@
     <div class="dashboard-header">
       <div>
         <h1 class="page-title">Admin Overview</h1>
-        <p class="page-subtitle">Welcome back. Here's what's happening across the entire platform.</p>
+        <p class="page-subtitle"> </p>
       </div>
 
       <div class="filter-section">
@@ -427,7 +427,7 @@ watch(isChatOpen, (val) => {
 
 .page-subtitle {
     color: #a1a1aa;
-    font-size: 14px;
+    font-size: 11px;
     margin: 0;
 }
 

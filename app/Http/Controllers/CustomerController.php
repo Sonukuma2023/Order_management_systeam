@@ -7,49 +7,99 @@ use App\Models\User;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
 
     public function store(Request $request)
-    {
+{
+    $request->validate([
+        'file' => 'required|mimes:csv,txt|max:2048',
+    ]);
 
-        
-        $request->validate([
-            'file' => 'required|mimes:csv,txt|max:2048',
-        ]);
+    $file = $request->file('file');
+    $handle = fopen($file->getRealPath(), 'r');
 
-        $file = $request->file('file');
-        $handle = fopen($file->getRealPath(), 'r');
-       
-        // Skip the header row
-        fgetcsv($handle);
+    // Skip header row
+    fgetcsv($handle);
 
-        $importedCount = 0;
-        while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
-           
+    $importedCount = 0;
+    $emailSentCount = 0;
 
-            if (isset($data[2]) && !empty($data[2])) {
-                // Concatenate First and Last name for your 'name' field
-                $fullName = trim(($data[0] ?? '') . ' ' . ($data[1] ?? ''));
+    while (($data = fgetcsv($handle, 1000, ',')) !== false) {
 
-                User::updateOrCreate(
-                    ['email' => $data[2]], // Unique identifier
-                    [
-                        'name'     => $fullName,
-                        'phone'    => $data[11] ?? ($data[12] ?? null), // Uses Address Phone, falls back to Phone column
-                        'address'  => $data[5] ?? null,
-                        'password' => Hash::make('password123'), // Default password
-                    ]
-                );
-                $importedCount++;
-            }
+        if (empty($data[2])) {
+            continue;
         }
 
-        fclose($handle);
+        $fullName = trim(($data[0] ?? '') . ' ' . ($data[1] ?? ''));
+        $email = trim($data[2]);
 
-        return back()->with('success', "$importedCount Customers imported successfully!");
+        $user = User::updateOrCreate(
+            ['email' => $email],
+            [
+                'name'     => $fullName,
+                'phone'    => $data[3] ?? ($data[12] ?? null),
+                'address'  => $data[4] ?? null,
+                'password' => Hash::make(Str::random(20)),
+            ]
+        );
+
+        try {
+
+            // Generate password reset token
+            $token = Password::createToken($user);
+
+            // Laravel reset password URL
+            $resetUrl = url('/reset-password/' . $token . '?email=' . urlencode($user->email));
+
+            Mail::html(
+                "
+                <h3>Hello {$user->name},</h3>
+
+                <p>Your account has been created successfully.</p>
+
+                <p>Email: {$user->email}</p>
+
+                <p>Please click the button below to create/change your password:</p>
+
+                <p>
+                    <a href='{$resetUrl}'
+                       style='background:#0d6efd;color:#fff;padding:10px 20px;
+                       text-decoration:none;border-radius:5px;'>
+                        Set Password
+                    </a>
+                </p>
+
+                <p>If you did not request this account, please ignore this email.</p>
+
+                <p>Thank you.</p>
+                ",
+                function ($message) use ($user) {
+                    $message->to($user->email)
+                        ->subject('Set Your Password');
+                }
+            );
+
+            $emailSentCount++;
+
+        } catch (\Exception $e) {
+            \Log::error('Email send failed: ' . $e->getMessage());
+        }
+
+        $importedCount++;
     }
+
+    fclose($handle);
+
+    return back()->with(
+        'success',
+        "{$importedCount} users imported successfully. {$emailSentCount} emails sent."
+    );
+}
     public function addnewuser(Request $request) {
     
         $validated = $request->validate([

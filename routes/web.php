@@ -56,7 +56,7 @@ Route::post('/reset-password', [PasswordResetController::class, 'updatePassword'
     ->middleware('guest')
     ->name('password.update');
 
-Route::post('/client-import', [CustomerController::class, 'store']);
+
 Route::prefix('vendor')
     ->name('vendor.')
     ->middleware(['auth', 'role:vendor'])
@@ -114,7 +114,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::put('/users/{id}', [DashboardController::class, 'update_user'])->name('users.update');
     Route::post('users', [CustomerController::class, 'addnewuser'])->name('users');
     Route::post('/admin/chatbot/query', [ChatbotController::class, 'handleQuery']);
-
+    Route::post('/client-import', [CustomerController::class, 'store']);
 });
 
 // Route::post('/webhook/product',[ProductController::class,'webhook_create_products'])->name('webhook.product');
