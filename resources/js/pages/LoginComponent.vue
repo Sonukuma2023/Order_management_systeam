@@ -44,23 +44,34 @@
             <span v-if="shouldShowError('email')" class="error-msg">{{ form.errors.email }}</span>
           </div>
 
-          <div v-if="!isForgotPasswordMode" class="input-group">
+         <div v-if="!isForgotPasswordMode" class="input-group">
             <div class="label-row">
               <label>Password</label>
               <button type="button" @click="toggleMode" class="text-link">Forgot password?</button>
             </div>
             <div class="input-wrapper">
               <i class='bx bx-lock-alt'></i>
+              
               <input 
                 v-model="form.password" 
-                type="password"  
+                :type="showLoginPassword ? 'text' : 'password'"  
                 :class="{'has-error': shouldShowError('password')}"
                 @blur="touched.password = true"
                 placeholder="••••••••"
               >
+
+              <span class="eye-icon-toggle" @click="showLoginPassword = !showLoginPassword">
+                <svg v-if="showLoginPassword" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon-svg">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M3 3l18 18"></path>
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon-svg">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </span>
             </div>
             <span v-if="shouldShowError('password')" class="error-msg">{{ form.errors.password }}</span>
-          </div>
+        </div>
 
           <button type="submit" class="btn-primary" :disabled="form.processing">
             <span v-if="form.processing" class="spinner"></span>
@@ -88,6 +99,8 @@ import { reactive, ref } from 'vue';
 const form = useForm({ email: '', password: '' });
 const touched = reactive({ email: false, password: false });
 const wasSubmitted = ref(false);
+// Add this line with your other refs
+const showLoginPassword = ref(false);
 
 const isForgotPasswordMode = ref(false);
 const statusMessage = ref('');
@@ -451,4 +464,46 @@ const submit = () => {
     padding: 32px 24px;
   }
 }
+/* Ensure the wrapper serves as a relative positioning anchor */
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Add padding to the right so typing text doesn't slide under the eye */
+.input-wrapper input {
+    width: 100%;
+    padding-right: 40px; 
+}
+
+/* Position the eye wrapper perfectly to the right side of the input box */
+.eye-icon-toggle {
+    position: absolute;
+    right: 14px;      
+    cursor: pointer;  
+    user-select: none; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;       
+    height: 20px;
+    z-index: 2; /* Ensures it stays on top of the input field */
+}
+
+/* Clean vector styling matching your dark layout */
+.eye-icon-svg {
+    width: 100%;       
+    height: 100%;
+    color: #6b7280;   /* Slate/gray resting state color */
+    transition: color 0.15s ease-in-out;
+}
+
+/* Turns bright white on hover against your dark UI */
+.eye-icon-toggle:hover .eye-icon-svg {
+    color: #ffffff;   
+}
+
+
 </style>
