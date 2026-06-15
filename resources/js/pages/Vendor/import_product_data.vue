@@ -259,7 +259,7 @@ const moveToShopify = async (product) => {
 </script>
 
 <style scoped>
-.product-management { padding: 2.5rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: #f6f6f7; min-height: 100vh; color: #202223; }
+.product-management { padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: #f6f6f7; min-height: 100vh; color: #202223; }
 .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
 h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
 .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; outline: none; }

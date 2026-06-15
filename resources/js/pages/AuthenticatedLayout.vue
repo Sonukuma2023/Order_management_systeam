@@ -76,7 +76,7 @@
 
         <form @submit.prevent="submitImport" class="modal-form">
   <div class="modal-body text-center">
-    <p class="modal-subtitle">Upload a CSV file to seamlessly import customers into your database.</p>
+    <p class="modal-subtitle"></p>
     
     <div class="upload-area" :class="{ 'dragging': isDragging }" 
          @dragover.prevent="isDragging = true" 
@@ -250,8 +250,8 @@ const handleDrop = (e) => {
 
 // Generates and downloads the dynamic format template directly using your required keys
 const downloadDemoCSV = () => {
-  const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Accepts', 'Marketing', 'Tags'];
-  const sampleRow = ['Laravel', 'developer', 'test1@gmail.com ', '4525252552', '', '', ''];
+  const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'address', 'Marketing', 'Tags'];
+  const sampleRow = ['Laravel', 'developer', 'test1@gmail.com ', '4525252552', 'ssdsdsds', '', ''];
   
   const csvContent = [headers.join(','), sampleRow.join(',')].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -272,7 +272,7 @@ const downloadDemoCSV = () => {
 const submitImport = () => {
   if (!importForm.file) return;
 
-  importForm.post('/vendor/products/import', { // Change this string endpoint path if your router endpoint differs
+  importForm.post('/client-import', {
     preserveScroll: true,
     onSuccess: () => {
       closeImportModal();
@@ -761,9 +761,9 @@ const submitImport = () => {
 
 /* Red outline sample button styling */
 .btn-demo-link {
-  background: none;
-  border: 1px solid #ff0000;
-  color: #ff0000;
+  background: green;
+  border: 1px solid #85ff00;
+  color:  white;
   padding: 0.45rem 0.75rem;
   cursor: pointer;
   font-size: 0.85rem;
@@ -774,7 +774,7 @@ const submitImport = () => {
 }
 
 .btn-demo-link:hover {
-  background-color: rgba(255, 0, 0, 0.05);
+  background-color: rgba(126, 228, 10, 0.05);
 }
 
 .mt-10 {

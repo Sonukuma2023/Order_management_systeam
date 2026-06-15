@@ -146,7 +146,9 @@ class DashboardController extends Controller
     }
     public function getcustomer()
     {
-        $users = User::where('role', 'Vendor')->get();
+        // Change ->get() to ->paginate(10)
+        $users = User::where('role', 'Vendor')->paginate(10);
+        
         return Inertia::render('Usercomponets', [
             'users' => $users
         ]);
