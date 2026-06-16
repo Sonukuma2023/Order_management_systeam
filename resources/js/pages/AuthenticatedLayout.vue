@@ -130,7 +130,7 @@
             <span v-if="profileForm.errors.email" class="err-msg">{{ profileForm.errors.email }}</span>
           </div>
           
-          <div class="password-section">
+          <!-- <div class="password-section">
             <p class="section-title">Security</p>
                   
             <div class="input-group mt-10">
@@ -141,8 +141,41 @@
             <div class="input-group">
               <input type="password" v-model="profileForm.password_confirmation" placeholder="Confirm New Password" />
             </div>
-          </div>
+          </div> -->
+          <div class="password-section">
+            <p class="section-title">Security</p>
+            
+            <div class="input-group mt-10">
+                <div class="password-wrapper">
+                    <input :type="showPassword ? 'text' : 'password'" v-model="profileForm.password" placeholder="New Password" />
+                    <span class="eye-icon-toggle" @click="showPassword = !showPassword">
+                        <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon-svg">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M3 3l18 18"></path>
+                        </svg>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon-svg">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </span>
+                </div>
+                <span v-if="profileForm.errors.password" class="err-msg">{{ profileForm.errors.password }}</span>
+            </div>
 
+            <div class="input-group">
+                <div class="password-wrapper">
+                    <input :type="showConfirmPassword ? 'text' : 'password'" v-model="profileForm.password_confirmation" placeholder="Confirm New Password" />
+                    <span class="eye-icon-toggle" @click="showConfirmPassword = !showConfirmPassword">
+                        <svg v-if="showConfirmPassword" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon-svg">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M3 3l18 18"></path>
+                        </svg>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon-svg">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+        </div>
           <div class="modal-actions">
             <button type="button" @click="closeProfileModal" class="btn-secondary">Cancel</button>
             <button type="submit" class="btn-primary" :disabled="profileForm.processing">
@@ -161,7 +194,9 @@ import { Link, useForm, usePage } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
 const page = usePage();
-
+// Reactive variables for toggling password visibility
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 // ==========================================
 // 1. Profile Editing Module States & Logic
 // ==========================================
@@ -780,4 +815,47 @@ const submitImport = () => {
 .mt-10 {
   margin-top: 10px;
 }
+/* Input structure layout wrapping context */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Padding to prevent input text running underneath the icon button */
+.password-wrapper input {
+    width: 100%;
+    padding-right: 42px; 
+}
+
+/* Clickable alignment framework container for icons */
+.eye-icon-toggle {
+    position: absolute;
+    right: 14px;      
+    cursor: pointer;  
+    user-select: none; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;       
+    height: 20px;
+}
+
+/* Default SVG line color mapping */
+.eye-icon-svg {
+    width: 100%;       
+    height: 100%;
+    color: #6b7280;   /* Muted gray default appearance */
+    transition: color 0.15s ease-in-out;
+}
+
+/* FIXED Dark Mode Hover Selector state */
+.eye-icon-toggle:hover .eye-icon-svg {
+    color: #ffffff;   /* Switches clean white directly against dark UI */
+}
+
+
+
+
 </style>
