@@ -110,14 +110,10 @@ class ProductController extends Controller
     public function webhook_create_products(Request $request)
     {
         try {
-            // 1️⃣ Get Shopify payload
+           
             $data = $request->all();
-
-            // 2️⃣ Safe variant handling
             $variant = $data['variants'][0] ?? [];
             $shopifyId = $data['id'] ?? null;
-
-            // 3️⃣ Safe image handling
             $imageUrl = $data['image']['src'] ?? ($data['images'][0]['src'] ?? null);
             $imageName = null;
 
@@ -129,7 +125,6 @@ class ProductController extends Controller
                 }
 
                 $imageName = time() . '_' . Str::random(5) . '.jpg';
-
                 $response = Http::get($imageUrl);
 
                 if ($response->successful()) {
@@ -140,10 +135,9 @@ class ProductController extends Controller
                 }
             }
 
-            // 4️⃣ SKU handling
+           
             $sku = $variant['sku'] ?? Str::random(6);
 
-            // 5️⃣ Create or update product in DB
             Product::updateOrCreate(
                 ['sku_code' => $sku],
                 [
@@ -160,11 +154,11 @@ class ProductController extends Controller
                 ]
             );
 
-            // 6️⃣ Respond to Shopify
+         
             return response()->json(['status' => 'success']);
 
         } catch (\Exception $e) {
-            // 7️⃣ Log errors for debugging
+             
             \Log::error('Webhook Error: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
@@ -177,8 +171,7 @@ class ProductController extends Controller
 
     public function webhook_update_products(Request $request)
     {
-        try {       
-
+        try { 
             $data = $request->all();
             $variant = $data['variants'][0] ?? [];
 

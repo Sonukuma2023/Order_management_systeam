@@ -110,14 +110,46 @@ class CustomerController extends Controller
         ]);
          $shopifyResponse = $this->shopify_create_customer($validated);
         
-        User::create([
+        $user =User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make('test@123'), 
             'phone'    => $validated['phone'] ?? null,
             'address'  => $validated['address'] ?? null,
-            'Role'     => 'user',
+            'Role'     => 'vendor',
         ]);
+
+            $token = Password::createToken($user);
+            $resetUrl = url('/reset-password/' . $token . '?email=' . urlencode($user->email));
+
+         Mail::html(
+                "
+                <h3>Hello {$user->name},</h3>
+
+                <p>Your account has been created successfully.</p>
+
+                <p>Email: {$user->email}</p>
+
+                <p>Please click the button below to create/change your password:</p>
+
+                <p>
+                    <a href='{$resetUrl}'
+                       style='background:#0d6efd;color:#fff;padding:10px 20px;
+                       text-decoration:none;border-radius:5px;'>
+                        Set Password
+                    </a>
+                </p>
+
+                <p>If you did not request this account, please ignore this email.</p>
+
+                <p>Thank you.</p>
+                ",
+                function ($message) use ($user) {
+                    $message->to($user->email)
+                        ->subject('Set Your Password');
+                }
+            );
+
 
         return redirect()->back()->with('message', 'Registration successful!');
     }
