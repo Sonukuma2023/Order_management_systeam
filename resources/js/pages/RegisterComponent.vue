@@ -9,7 +9,7 @@
         <div class="visual-content">
           <div class="logo-placeholder">
             <div class="logo-icon"></div>
-            <span>OrderSync</span>
+            <span>Order Management Systeam </span>
           </div>
           <h2>Join us today and<br>scale your business.</h2>
           <p>Create an account to manage your orders, track inventory, and get a faster checkout experience.</p>

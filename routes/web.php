@@ -13,6 +13,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Vendor\VendorController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use Illuminate\Support\Facades\Redis;
+use App\Http\Controllers\Auth\GoogleAuthController; 
  
 use App\Http\Controllers\ChatbotController;
 use Inertia\Inertia;
@@ -117,7 +118,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::post('/client-import', [CustomerController::class, 'store']);
 });
 
-// Route::post('/webhook/product',[ProductController::class,'webhook_create_products'])->name('webhook.product');
+Route::post('/webhook/product', [ProductController::class, 'webhook_create_products'])->name('webhook.product');
 Route::post('/webhook/update', [ProductController::class, 'webhook_update_products'])->name('webhook.update');
 Route::post('/webhook/delete', [ProductController::class, 'webhook_delete_products'])->name('webhook.delete');
 Route::get('/getorders',[OrderController::class,'index'])->name('getorders');  
@@ -131,9 +132,6 @@ Route::post('/logout', function () {
     return redirect('/login');
 })->name('logout');
 
-
-
-
-Route::post('/webhook/product', [ProductController::class, 'webhook_create_products'])
-    ->name('webhook.product');
+Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 
