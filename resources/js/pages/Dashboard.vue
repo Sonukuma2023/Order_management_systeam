@@ -488,7 +488,7 @@ watch(isChatOpen, (val) => {
     background: #0f0f11;
     padding: 24px;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid whitesmoke;
     display: flex;
     align-items: center;
     gap: 20px;
@@ -550,7 +550,7 @@ watch(isChatOpen, (val) => {
 
 .chart-card {
     background: #0f0f11;
-    padding: 24px;
+    padding: 20px;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -614,7 +614,7 @@ watch(isChatOpen, (val) => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #ff2770;
   border: none;
   color: white;
   font-size: 24px;

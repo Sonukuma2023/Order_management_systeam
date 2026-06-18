@@ -301,8 +301,8 @@ h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
 .modal-buttons-right { display: flex; gap: 0.75rem; align-items: center; }
 
 /* Left-Aligned Red Border Box Link */
-.btn-demo-link { background: none; border: 1px solid #ff0000; color: #ff0000; padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.85rem; border-radius: 4px; font-weight: 500; transition: background-color 0.2s; text-transform: lowercase; }
-.btn-demo-link:hover { background-color: rgba(255, 0, 0, 0.05); }
+.btn-demo-link { background: #34e608ab; border: 1px solid #ff0000; color: black; padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.85rem; border-radius: 4px; font-weight: 500; transition: background-color 0.2s; text-transform: lowercase; }
+.btn-demo-link:hover { background-color: #34e608ab; }
 
 /* Pagination Styling Rules */
 .pagination-footer { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #ffffff; border-top: 1px solid #e1e3e5; flex-wrap: wrap; gap: 1rem; }

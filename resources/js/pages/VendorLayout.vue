@@ -454,7 +454,7 @@ const updateProfile = () => {
     width: 100%;
     max-width: 480px;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid white;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
