@@ -45,7 +45,7 @@
               <td>{{ product.quantity }}</td>
 
               <td>
-                <span class="status-pill" :class="product.status === 'active' ? 'active' : 'inactive'">
+                <span class="status-pill" :class="product.status === 'active' ? 'active' : 'draft'">
                   {{ product.status }}
                 </span>
               </td>
@@ -144,7 +144,7 @@
                 <label>Status</label>
                 <select v-model="form.status">
                   <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="draft">draft</option>
                 </select>
                 <span v-if="form.errors.status" class="error-text">{{ form.errors.status }}</span>
               </div>
@@ -343,7 +343,7 @@ const confirmDelete = (id) => {
 .price-text { font-weight: 600; color: #fff; }
 .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: capitalize; }
 .status-pill.active { background: rgba(0, 255, 127, 0.1); color: #00ff7f; }
-.status-pill.inactive { background: rgba(255, 39, 112, 0.1); color: #ff2770; }
+.status-pill.draft { background: rgba(255, 39, 112, 0.1); color: #ff2770; }
 
 .action-buttons { display: flex; justify-content: center; gap: 8px; }
 .edit-btn, .delete-btn {

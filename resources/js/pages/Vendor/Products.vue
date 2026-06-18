@@ -196,7 +196,7 @@ const deleteProduct = (id) => {
                             <label>Status</label>
                             <select v-model="form.status">
                                 <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="draft">draft</option>
                             </select>
                             <span v-if="form.errors.status" class="error">{{ form.errors.status }}</span>
                         </div>

@@ -121,7 +121,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
 Route::post('/webhook/product', [ProductController::class, 'webhook_create_products'])->name('webhook.product');
 Route::post('/webhook/update', [ProductController::class, 'webhook_update_products'])->name('webhook.update');
 Route::post('/webhook/delete', [ProductController::class, 'webhook_delete_products'])->name('webhook.delete');
-Route::get('/getorders',[OrderController::class,'index'])->name('getorders');  
+// Route::get('/getorders',[OrderController::class,'index'])->name('getorders');  
 
 Route::post('/logout', function () {
 

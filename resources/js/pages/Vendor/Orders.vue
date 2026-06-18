@@ -129,7 +129,7 @@ const fallbackBlobDownload = (element, filename) => {
                         class="table-data-row"
                     >
                         <div class="col-id order-id-highlight">
-                            {{ order.order_name || ('#' + order.order_id) }}
+                            {{ order.order_id || ('#' + order.order_id) }}
                         </div>
                         
                         <div class="col-customer">
@@ -143,7 +143,7 @@ const fallbackBlobDownload = (element, filename) => {
                         
                         <div class="col-amount price-text">
                             <!-- Safe fallback check in case price comes as a raw string from Laravel -->
-                            Scale: ₹{{ typeof order.price === 'number' ? order.price.toFixed(2) : parseFloat(order.price || 0).toFixed(2) }}
+                            ₹{{ typeof order.price === 'number' ? order.price.toFixed(2) : parseFloat(order.price || 0).toFixed(2) }}
                         </div>
                         
                         <div class="col-status">
@@ -181,7 +181,7 @@ const fallbackBlobDownload = (element, filename) => {
                     <i class='bx bx-receipt modal-header-icon'></i>
                     <div>
                         <h2>Order Details</h2>
-                        <p class="modal-id-stamp">{{ selectedOrder.order_name || ('#' + selectedOrder.order_id) }}</p>
+                        <p class="modal-id-stamp">{{ selectedOrder.order_id || ('#' + selectedOrder.order_id) }}</p>
                     </div>
                 </div>
                 <button class="modal-close-btn" @click="closeModal">×</button>
@@ -237,7 +237,7 @@ const fallbackBlobDownload = (element, filename) => {
                         <div class="meta-item spans-all download-container exclude-from-pdf">
                             <button class="download-pdf-btn" @click="downloadOrderPDF">
                                 <i class='bx bx-download'></i> Download PDF
-                            </button> 
+                            </button>
                         </div>
                     </div>
                 </div>
