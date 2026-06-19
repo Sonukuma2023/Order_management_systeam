@@ -31,7 +31,7 @@ class ProductController extends Controller
             'category'    => 'required|string|exists:categories,name',
             'price'       => 'required|numeric|min:0',
             'quantity'    => 'required|integer|min:0',
-            'status'      => 'required|in:active,inactive',
+            'status'      => 'required|in:active,draft',
             'description' => 'nullable|string', 
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // 2MB Max
         ]);
@@ -52,6 +52,7 @@ class ProductController extends Controller
         if (isset($shopifyResponse['product']['id'])) {
             $validated['shopify_id'] = $shopifyResponse['product']['id'];
         }
+         
 
         $data = Product::create($validated);
         return redirect()->back()->with('success', 'Product created successfully!');
@@ -65,7 +66,7 @@ class ProductController extends Controller
             'category'    => 'required|string|exists:categories,name',
             'price'       => 'required|numeric|min:0',
             'quantity'    => 'required|integer|min:0',
-            'status'      => 'required|in:active,inactive',
+            'status'      => 'required|in:active,draft',
             'description' => 'nullable|string',
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
@@ -150,7 +151,7 @@ class ProductController extends Controller
                     'category'    => $data['category']['name'] ?? 'Default',
                     'image'       => $imageName,
                     'shopify_id'  => $shopifyId,
-                    'auth_id'     => 28,
+                    'auth_id'     => Auth::id(),
                 ]
             );
 
@@ -171,7 +172,7 @@ class ProductController extends Controller
 
     public function webhook_update_products(Request $request)
     {
-        try { 
+        try {
             $data = $request->all();
             $variant = $data['variants'][0] ?? [];
 
@@ -272,6 +273,7 @@ class ProductController extends Controller
                 ]
             ]
         ];
+         
         if (!empty($validated['image'])) {
 
             $imagePath = public_path('asset/product/images/' . $validated['image']);
@@ -327,7 +329,8 @@ class ProductController extends Controller
                     "variants" => [
                         [
                             "price" => (string)$validated['price'],
-                            "sku" => $validated['sku_code']
+                            "sku" => $validated['sku_code'],
+                            "inventory_quantity" => (int)$validated['quantity']
                         ]
                     ]
                 ]

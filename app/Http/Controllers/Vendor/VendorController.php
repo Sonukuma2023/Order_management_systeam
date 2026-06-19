@@ -36,6 +36,7 @@ class VendorController extends Controller
             ->count();
 
         $orderdata = $this->get_orders($startDate,$endDate);
+         
 
         $userProductIds = Product::where('auth_id', $auth_id)
             ->pluck('shopify_id')
@@ -45,8 +46,8 @@ class VendorController extends Controller
         $total_sales = 0;
         $result = [];
 
-       if (!empty($orderdata['draft_orders'])) {
-            foreach ($orderdata['draft_orders'] as $order) {
+       if (!empty($orderdata['orders'])) {
+            foreach ($orderdata['orders'] as $order) {
                 $hasMatch = false;
 
                 if (!empty($order['line_items'])) {
@@ -75,7 +76,6 @@ class VendorController extends Controller
                     }
                 }
 
-                // Count unique orders for this vendor
                 if ($hasMatch) {
                     $order_count++;
                 }
@@ -122,7 +122,7 @@ class VendorController extends Controller
             'category'    => 'required|string|exists:categories,name',
             'price'       => 'required|numeric|min:0',
             'quantity'    => 'required|integer|min:0',
-            'status'      => 'required|in:active,inactive',
+            'status'      => 'required|in:active,draft',
             'description' => 'nullable|string', 
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // 2MB Max
         ]);
@@ -164,8 +164,8 @@ class VendorController extends Controller
             'category'    => 'required|string|exists:categories,name',
             'price'       => 'required|numeric|min:0',
             'quantity'    => 'required|integer|min:0',
-            'status'      => 'required|in:active,inactive',
-            'description' => 'nullable|string', 
+            'status'      => 'required|in:active,draft',
+            'description' => 'nullable|string',
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
@@ -213,14 +213,14 @@ class VendorController extends Controller
     {
         $user = $request->user();
 
-        // 1. Validate the request
+      
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
 
-        // 2. Update Name and Email
+        
         $user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -296,7 +296,7 @@ class VendorController extends Controller
 
      public function get_orders($start = null, $end = null)
     {
-        $baseUrl = env('SHOPIFY_URL') . '/admin/api/2026-01/draft_orders.json';
+        $baseUrl = env('SHOPIFY_URL') . '/admin/api/2026-01/orders.json';
         
         $queryParams = [];
         if ($start) {
@@ -346,9 +346,12 @@ class VendorController extends Controller
         $data = $this->get_orders();
         $result = [];
         $productIds = [];
+        
 
-        if (!empty($data['draft_orders'])) {
-            foreach ($data['draft_orders'] as $order) {
+        if (!empty($data['orders'])) {
+            foreach ($data['orders'] as $order) {
+
+                 
                 $orderId = $order['id'] ?? null;
                 $orderName = $order['name'] ?? null;
                 $status = $order['status'] ?? 'Processing'; // Default fallback status
@@ -396,7 +399,7 @@ class VendorController extends Controller
             return in_array($order['product_id'], $vendorProductIds);
         }));
 
-        
+
         return Inertia::render('Vendor/Orders', [
             'orders' => $filteredOrders
         ]);

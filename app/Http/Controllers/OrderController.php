@@ -11,9 +11,7 @@ class OrderController extends Controller
 {
     public function get_orders()
     {
-
        $curl = curl_init();
-
         curl_setopt_array($curl, [
             CURLOPT_URL => env('SHOPIFY_URL') . '/admin/api/2025-10/draft_orders.json',
             CURLOPT_RETURNTRANSFER => true,

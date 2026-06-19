@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('description');
             $table->string('sku_code')->unique();
             $table->integer('quantity');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->enum('status', ['active', 'draft'])->default('draft');
             $table->timestamps();
         });
     }
