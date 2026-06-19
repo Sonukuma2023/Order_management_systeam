@@ -3,7 +3,6 @@
     <div class="welcome-banner">
       <div class="header-text">
         <h1>Orders</h1>
-        
       </div>
       <div class="stats-mini">
         <span class="stat-item"><i class='bx bx-package'></i> {{ result.length }} Total Orders</span>
@@ -50,7 +49,8 @@
       </table>
     </div>
 
-    <div v-if="selectedOrder" class="modal-overlay" @click.self="closeModal">
+    <!-- Modal Popup Details & PDF Canvas Wrapper -->
+    <div v-if="selectedOrder" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
           <div class="header-title-wrapper">
@@ -66,49 +66,72 @@
         </div>
 
         <div class="modal-body">
-          <div class="status-row">
-            <span class="status-label">Current Status:</span>
-            <span class="status-badge" :class="statusClass(selectedOrder.status)">
-              {{ selectedOrder.status || 'Open' }}
-            </span>
-          </div>
+          <!-- Printable Clean Document Section Target -->
+          <div class="simple-pdf-page" ref="pdfContent">
+            
+            <!-- Document Heading -->
+            <div class="pdf-document-header">
+              <div>
+                <h1 class="pdf-title">Order Statement</h1>
+                <p class="pdf-subtitle">Official Transaction Summary</p>
+              </div>
+              <div class="pdf-meta-badge">OFFICIAL</div>
+            </div>
 
-          <div class="detail-section">
-            <h3 class="section-title"><i class='bx bx-user'></i> CUSTOMER PROFILE</h3>
-            <div class="grid-2-col">
-              <div class="info-group">
-                <span class="info-label">Full Name</span>
-                <span class="info-value text-bold">{{ selectedOrder.customer_name || 'N/A' }}</span>
+            <div class="pdf-divider"></div>
+
+            <!-- Profile Info Grid Layout -->
+            <div class="pdf-data-grid">
+              <div class="pdf-info-block">
+                <span class="pdf-label">CUSTOMER PROFILE</span>
+                <h3 class="pdf-value-bold">{{ selectedOrder.customer_name || 'N/A' }}</h3>
+                <p class="pdf-value-subtext">{{ selectedOrder.email || 'N/A' }}</p>
               </div>
-              <div class="info-group">
-                <span class="info-label">Email Address</span>
-                <span class="info-value text-cyan">{{ selectedOrder.email || 'N/A' }}</span>
+              
+              <div class="pdf-info-block text-right-aligned">
+                <span class="pdf-label">TRANSACTION DETAILS</span>
+                <p class="pdf-value-text"><strong>Order ID:</strong> #{{ selectedOrder.order_name || selectedOrder.order_id }}</p>
+                <p class="pdf-value-text"><strong>Date:</strong> {{ formatDate(selectedOrder.date) }}</p>
+                <p class="pdf-value-text"><strong>Status:</strong> <span class="pdf-status-text">{{ selectedOrder.status || '-' }}</span></p>
               </div>
             </div>
-            <div class="grid-2-col margin-top-md">
-              <div class="info-group">
-                <span class="info-label">Purchase Date</span>
-                <span class="info-value text-bold">{{ formatDate(selectedOrder.date) }}</span>
+
+            <!-- Line Items Table Structure -->
+            <table class="pdf-invoice-table">
+              <thead>
+                <tr>
+                  <th align="left">Product Description</th>
+                  <th align="left">Database ID</th>
+                  <th align="right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="pdf-item-name">{{ selectedOrder.product_name || 'N/A' }}</td>
+                  <td class="pdf-item-mono">{{ selectedOrder.product_id || 'PID-9055313821924' }}</td>
+                  <td align="right" class="pdf-item-price">₹{{ formatPrice(selectedOrder.price) }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Grand Total Section -->
+            <div class="pdf-total-wrapper">
+              <div class="pdf-total-row">
+                <span class="pdf-total-label">Grand Total:</span>
+                <span class="pdf-total-val">₹{{ formatPrice(selectedOrder.price) }}</span>
               </div>
+            </div>
+
+            <div class="pdf-footer-note">
+              <p>Thank you for your business. Generated via Order Management System.</p>
             </div>
           </div>
-
-          <div class="detail-section inner-card">
-            <h3 class="section-title"><i class='bx bx-shopping-bag'></i> LINE ITEM BREAKDOWN</h3>
-            <div class="info-group">
-              <span class="info-label">Product Title / Variant Name</span>
-              <span class="info-value text-bold">{{ selectedOrder.product_name || 'N/A' }}</span>
-            </div>
-            <div class="grid-2-col margin-top-md">
-              <div class="info-group">
-                <span class="info-label">Database Identifier</span>
-                <span class="db-id-badge">{{ selectedOrder.product_id || 'PID-9055313821924' }}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">Unit Settlement Price</span>
-                <span class="info-value text-cyan text-bold">₹{{ formatPrice(selectedOrder.price) }}</span>
-              </div>
-            </div>
+          
+          <!-- Download Trigger Element (Hidden from the print canvas target) -->
+          <div class="download-action-container">
+            <button class="download-pdf-btn" @click="downloadSimplePDF">
+              <i class='bx bx-download'></i> Download Clean PDF
+            </button>
           </div>
         </div>
 
@@ -121,10 +144,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from './AuthenticatedLayout.vue';
 import Swal from 'sweetalert2';
+import html2pdf from 'html2pdf.js'; // Ensure this package is installed: npm install html2pdf.js
 
 // Props from Laravel
 const props = defineProps({
@@ -133,8 +157,9 @@ const props = defineProps({
 
 const page = usePage();
 
-// Reactive reference to store the active order for the popup
+// Reactive references
 const selectedOrder = ref(null);
+const pdfContent = ref(null);
 
 // Functions to manage modal
 const viewOrder = (order) => {
@@ -145,7 +170,33 @@ const closeModal = () => {
   selectedOrder.value = null;
 };
 
-// Toast for flash messages
+// Generate and export simple structural PDF file format
+const downloadSimplePDF = async () => {
+  await nextTick();
+  const element = pdfContent.value;
+  
+  if (!element) return;
+
+  const orderIdentifier = selectedOrder.value.order_name || selectedOrder.value.order_id;
+  const filename = `order_${orderIdentifier}.pdf`.toLowerCase();
+
+  const options = {
+    margin:       [15, 15, 15, 15],
+    filename:     filename,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { 
+      scale: 3,                // Multiplied scale factor resolves grainy text artifacts
+      useCORS: true, 
+      backgroundColor: '#ffffff', // Ensures no dark theme bleed
+      logging: false 
+    },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(options).from(element).save();
+};
+
+// Toast configuration for flash messages
 const Toast = Swal.mixin({
   toast: true,
   position: 'top-end',
@@ -166,13 +217,11 @@ onMounted(() => {
   }
 });
 
-// Format price with commas and 2 decimals
 const formatPrice = (price) => {
   if (!price) return '0.00';
   return Number(price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-// Map status to CSS class
 const statusClass = (status) => {
   switch ((status || 'open').toLowerCase()) {
     case 'delivered': return 'delivered';
@@ -183,7 +232,6 @@ const statusClass = (status) => {
   }
 };
 
-// Format date to 'May 25, 2026'
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
@@ -280,7 +328,7 @@ const formatDate = (date) => {
   background: #1a1a1e;
   border: 1px solid #2d2d34;
   width: 100%;
-  max-width: 540px;
+  max-width: 580px;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
@@ -334,96 +382,188 @@ const formatDate = (date) => {
   cursor: pointer;
   transition: 0.2s;
 }
-.close-btn-x:hover {
-  color: #fff;
-}
+.close-btn-x:hover { color: #fff; }
 
 .modal-body {
   padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
-.status-row {
-  background: #212126;
+/* ==========================================================================
+   SIMPLE CLEAN PRINT CANVAS FORMATTING (White Background Paper Style)
+   ========================================================================== */
+.simple-pdf-page {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  padding: 30px;
   border-radius: 8px;
-  padding: 12px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+.pdf-document-header {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-.status-label {
-  color: #718096;
-  font-size: 13px;
+.pdf-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a !important;
+  margin: 0;
 }
 
-.detail-section {
-  margin-bottom: 24px;
-}
-
-.inner-card {
-  background: #212126;
-  border: 1px solid #2d2d34;
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 0;
-}
-
-.section-title {
-  color: #718096;
+.pdf-subtitle {
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  color: #64748b !important;
+  margin: 4px 0 0 0;
 }
 
-.grid-2-col {
+.pdf-meta-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+}
+
+.pdf-divider {
+  height: 1px;
+  background: #e2e8f0 !important;
+  margin: 20px 0;
+}
+
+.pdf-data-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
-.margin-top-md {
-  margin-top: 14px;
-}
-
-.info-group {
+.pdf-info-block {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
-.info-label {
-  color: #52525b;
-  font-size: 12px;
+.text-right-aligned {
+  align-items: flex-end;
+  text-align: right;
 }
 
-.info-value {
-  color: #e4e4e7;
+.pdf-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8 !important;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.pdf-value-bold {
   font-size: 14px;
-}
-
-.text-bold {
   font-weight: 600;
+  color: #0f172a !important;
+  margin: 0;
 }
 
-.text-cyan {
-  color: #00f2ff !important;
+.pdf-value-subtext {
+  font-size: 12px;
+  color: #475569 !important;
+  margin: 2px 0 0 0;
 }
 
-.db-id-badge {
-  background: #161619;
-  border: 1px solid #2d2d34;
-  color: #a1a1aa;
-  padding: 6px 10px;
-  border-radius: 6px;
+.pdf-value-text {
+  font-size: 12px;
+  color: #334155 !important;
+  margin: 2px 0 0 0;
+}
+
+.pdf-status-text {
+  font-weight: 700;
+  color: #0284c7 !important;
+  text-transform: uppercase;
+}
+
+/* Custom Table for Simple PDF */
+.pdf-invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.pdf-invoice-table th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.pdf-invoice-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9 !important;
   font-size: 13px;
-  font-family: monospace;
-  display: inline-block;
-  max-width: max-content;
+  color: #334155 !important;
+}
+
+.pdf-item-name { font-weight: 600; color: #0f172a !important; }
+.pdf-item-mono { font-family: monospace; color: #64748b !important; }
+.pdf-item-price { font-weight: 600; color: #0f172a !important; }
+
+.pdf-total-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.pdf-total-row {
+  display: flex;
+  justify-content: space-between;
+  width: 200px;
+  border-top: 2px solid #0f172a !important;
+  padding-top: 10px;
+}
+
+.pdf-total-label { font-size: 13px; font-weight: 700; color: #475569 !important; }
+.pdf-total-val { font-size: 16px; font-weight: 700; color: #0f172a !important; }
+
+.pdf-footer-note {
+  text-align: center;
+  margin-top: 30px;
+  border-top: 1px solid #f1f5f9 !important;
+  padding-top: 12px;
+}
+.pdf-footer-note p { font-size: 10px; color: #94a3b8 !important; margin: 0; }
+
+/* Interactive UI Elements Container */
+.download-action-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.download-pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #00f2ff;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.download-pdf-btn:hover {
+  background: #00d1dc;
+  transform: translateY(-1px);
 }
 
 .modal-footer {
@@ -444,7 +584,6 @@ const formatDate = (date) => {
   cursor: pointer;
   transition: 0.2s;
 }
-
 .close-btn-action:hover {
   background: #3f3f46;
   color: #fff;
