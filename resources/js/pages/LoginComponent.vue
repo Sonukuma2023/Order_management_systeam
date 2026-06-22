@@ -9,7 +9,7 @@
         <div class="visual-content">
           <div class="logo-placeholder">
             <div class="logo-icon"></div>
-            <span>Order Management Systeam </span>
+            <span>Inventory Management System </span>
           </div>
           <h2>Manage your business<br>with precision.</h2>
           <p>The ultimate order management system designed to streamline your workflow and accelerate growth.</p>

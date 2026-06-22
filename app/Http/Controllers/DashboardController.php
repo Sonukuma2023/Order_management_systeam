@@ -63,7 +63,7 @@ class DashboardController extends Controller
 
    public function get_orders($start = null, $end = null)
     {
-        $baseUrl = env('SHOPIFY_URL') . '/admin/api/2026-01/draft_orders.json';
+        $baseUrl = env('SHOPIFY_URL') . '/admin/api/2026-01/orders.json';
         
         $queryParams = [];
         if ($start) {
@@ -111,11 +111,11 @@ class DashboardController extends Controller
     {
         $data = $this->get_orders();
         $result = [];
-        if (!empty($data['draft_orders'])) {
-            foreach ($data['draft_orders'] as $order) {
+        if (!empty($data['orders'])) {
+            foreach ($data['orders'] as $order) {
                 $orderId = $order['id'] ?? null;
                 $orderName = $order['name'] ?? null;
-                $status = $order['status'] ?? null;
+                $status = $order['financial_status'] ?? null;
                 $createdAt = $order['created_at'] ?? null;
 
                 $customer = $order['customer'] ?? [];
@@ -184,9 +184,9 @@ class DashboardController extends Controller
         $totalsale = 0;
         $result = [];
 
-        if (!empty($data['draft_orders'])) {
+        if (!empty($data['orders'])) {
 
-            foreach ($data['draft_orders'] as $order) {
+            foreach ($data['orders'] as $order) {
 
                 $totalPrice = isset($order['total_price'])
                     ? (float)$order['total_price']
