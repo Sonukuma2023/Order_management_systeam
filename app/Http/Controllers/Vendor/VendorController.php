@@ -528,7 +528,7 @@ class VendorController extends Controller
 
         $result = [];
         
-        foreach (($orderdata['draft_orders'] ?? []) as $order) {
+        foreach (($orderdata['orders'] ?? []) as $order) {
             foreach (($order['line_items'] ?? []) as $item) {
                 $productId = $item['product_id'] ?? null;
 

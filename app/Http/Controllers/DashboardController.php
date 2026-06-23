@@ -24,8 +24,8 @@ class DashboardController extends Controller
         $totalsale = 0;
         $result = [];
 
-        if (!empty($data['draft_orders'])) {
-            foreach ($data['draft_orders'] as $order) {
+        if (!empty($data['orders'])) {
+            foreach ($data['orders'] as $order) {
                  $totalPrice = isset($order['total_price']) ? (float)$order['total_price'] : 0;
                 if (!empty($order['line_items'])) {
                     foreach ($order['line_items'] as $item) {
