@@ -15,7 +15,6 @@
           <p>Create an account to manage your orders, track inventory, and get a faster checkout experience.</p>
         </div>
         <div class="visual-overlay"></div>status
-        
       </div>
 
       <!-- Right Panel (Form) -->
