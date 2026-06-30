@@ -29,13 +29,14 @@
             <label>Full Name</label>
             <div class="input-wrapper">
               <i class='bx bx-user'></i>
-              <input 
-                v-model="form.name" 
-                type="text"  
-                :class="{'has-error': shouldShowError('name')}"
+             <input
+                v-model="form.name"
+                type="text"
+                @input="form.name = form.name.replace(/[^a-zA-Z\s]/g, '')"
+                :class="{ 'has-error': shouldShowError('name') }"
                 @blur="touched.name = true"
                 placeholder="John Doe"
-              >
+              />
             </div>
             <span v-if="shouldShowError('name')" class="error-msg">{{ form.errors.name }}</span>
           </div>
@@ -59,13 +60,16 @@
             <label>Phone Number</label>
             <div class="input-wrapper">
               <i class='bx bx-phone'></i>
-              <input 
-                v-model="form.phone" 
-                type="text"  
-                :class="{'has-error': shouldShowError('phone')}"
+              <input
+                v-model="form.phone"
+                type="text"
+                inputmode="numeric"
+                maxlength="10"
+                @input="form.phone = form.phone.replace(/\D/g, '').slice(0, 10)"
+                :class="{ 'has-error': shouldShowError('phone') }"
                 @blur="touched.phone = true"
-                placeholder="+1 (555) 000-0000"
-              >
+                placeholder="Enter 10-digit phone number"
+              />
             </div>
             <span v-if="shouldShowError('phone')" class="error-msg">{{ form.errors.phone }}</span>
           </div>

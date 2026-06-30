@@ -9,6 +9,12 @@ const props = defineProps({
         default: () => ({ data: [], links: [] })
     }
 });
+// const result = computed(() => props.reportData.data || []);
+const totalSales = computed(() => {
+    return result.value.reduce((sum, item) => {
+        return sum + Number(item.total || 0);
+    }, 0);
+});
 
 // Alias for cleaner template parsing
 const result = computed(() => props.reportData.data || []);
@@ -92,12 +98,17 @@ const getStatusClass = (status) => {
                     <span class="text-bright text-right">
                         ₹{{ Number(item.total).toLocaleString('en-IN') }}
                     </span>
+                    
                 </div>
 
                 <div v-else class="empty-state">
                     <i class="bx bx-layer-minus empty-icon"></i>
                     <p>No product report data found.</p>
                 </div>
+                 <div class="total-sales">
+                    <strong>Total Sales:</strong>
+                    ₹{{ totalSales.toLocaleString('en-IN') }}
+                </div> 
             </div>
 
             <div v-if="result.length && paginationLinks.length > 3" class="pagination-container">
